@@ -1,0 +1,15 @@
+# Dependencies and build outputs
+node_modules/
+*.tsbuildinfo
+
+# Local scratch
+*.dshpm.tmp
+scripts/*.json
+scripts/draft*
+
+# Logs
+*.log
+
+# Note: lib/ is intentionally committed — the bundle ships prebuilt so
+# `github:` / `file:` installs work without a build script (pnpm >= 10 blocks
+# git-dependency build scripts unless allowlisted). Rebuild with `pnpm run build`.

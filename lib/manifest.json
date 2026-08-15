@@ -1,0 +1,5 @@
+{
+  "name": "dsh-plugin-manager",
+  "host": "lib/index.js",
+  "client": "lib/client.js"
+}

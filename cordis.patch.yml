@@ -1,0 +1,5 @@
+# dsh-plugin-manager bundle patch layer: registers the host plugin row.
+- insert:
+    - id: dsh-plugin-manager
+      name: 'dsh-plugin-manager'
+      inject: ['webServer', 'loader']
