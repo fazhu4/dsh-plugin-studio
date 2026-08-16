@@ -21,7 +21,7 @@ export const DEFAULT_PROTECTED_MODULES: readonly string[] = [
   '@deepseek-ai/dsh-client-ui-settings',
   '@deepseek-ai/dsh-client-ui-settings-plugins',
   // This plugin itself.
-  'dsh-plugin-manager',
+  'dsh-plugin-studio',
 ]
 
 /** Merge configuration-provided modules with the defaults (dedup, order kept). */

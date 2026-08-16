@@ -9,13 +9,13 @@ export function CardShell(props: {
   details?: ReactNode
 }): ReactNode {
   return (
-    <div className="dsh_pm_card">
-      <div className="dsh_pm_cardRow">
-        <span className="dsh_pm_title" title={props.title}>{props.title}</span>
-        {props.badges?.map((badge, index) => <span key={index} className="dsh_pm_badge">{badge}</span>)}
+    <div className="dsh_ps_card">
+      <div className="dsh_ps_cardRow">
+        <span className="dsh_ps_title" title={props.title}>{props.title}</span>
+        {props.badges?.map((badge, index) => <span key={index} className="dsh_ps_badge">{badge}</span>)}
       </div>
-      {props.description !== undefined ? <div className="dsh_pm_desc">{props.description}</div> : null}
-      {props.actions !== undefined ? <div className="dsh_pm_actions">{props.actions}</div> : null}
+      {props.description !== undefined ? <div className="dsh_ps_desc">{props.description}</div> : null}
+      {props.actions !== undefined ? <div className="dsh_ps_actions">{props.actions}</div> : null}
       {props.details}
     </div>
   )
