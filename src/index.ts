@@ -1,11 +1,11 @@
 /**
- * dsh-plugin-studio host plugin. Loopback-only HTTP routes over webServer:
+ * dsh-usage-insights host plugin. Loopback-only HTTP routes over webServer:
  *
- *   GET  /dsh-plugin-studio/list      — grouped, enriched plugin inventory
- *   POST /dsh-plugin-studio/toggle    — enable/disable via user patch layer
- *   GET  /dsh-plugin-studio/search    — GitHub dsh-plugin market search
- *   POST /dsh-plugin-studio/install   — pnpm add + bundle reconcile
- *   POST /dsh-plugin-studio/uninstall — pnpm remove + bundle reconcile
+ *   GET  /dsh-usage-insights/list      — grouped, enriched plugin inventory
+ *   POST /dsh-usage-insights/toggle    — enable/disable via user patch layer
+ *   GET  /dsh-usage-insights/search    — GitHub dsh-plugin market search
+ *   POST /dsh-usage-insights/install   — pnpm add + bundle reconcile
+ *   POST /dsh-usage-insights/uninstall — pnpm remove + bundle reconcile
  *
  * Services injected: webServer, loader. All DSH APIs are consumed
  * structurally (duck-typed faces) so this package needs no DSH imports.
@@ -39,7 +39,7 @@ import type {
 } from './contract.ts'
 
 /** Plugin metadata (Cordis). */
-export const name = 'dsh-plugin-studio'
+export const name = 'dsh-usage-insights'
 
 /** Declared service injections. */
 export const inject = ['webServer', 'loader']
@@ -240,7 +240,7 @@ async function searchMarket(query: string, ttlMs: number, perPage = 15): Promise
     per_page: String(perPage),
   })}`
   const res = await fetch(url, {
-    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-plugin-studio' },
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'dsh-usage-insights' },
   })
   if (!res.ok) throw new Error(`GitHub search failed: HTTP ${res.status}`)
   const repos = parseSearchResponse(await res.json())
@@ -365,7 +365,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
   try {
     paths = profilePathsFromBaseUrl(ctx.baseUrl)
   } catch (error) {
-    throw new Error(`dsh-plugin-studio: cannot resolve the profile directory from ctx.baseUrl (${String(ctx.baseUrl)}): ${String(error)}`)
+    throw new Error(`dsh-usage-insights: cannot resolve the profile directory from ctx.baseUrl (${String(ctx.baseUrl)}): ${String(error)}`)
   }
 
   // Route disposers, released when this plugin's fiber unloads.
@@ -373,7 +373,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/list',
+    path: '/dsh-usage-insights/list',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -386,7 +386,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/toggle',
+    path: '/dsh-usage-insights/toggle',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -427,7 +427,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/search',
+    path: '/dsh-usage-insights/search',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -461,7 +461,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/install',
+    path: '/dsh-usage-insights/install',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -479,7 +479,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/uninstall',
+    path: '/dsh-usage-insights/uninstall',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -497,7 +497,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/group',
+    path: '/dsh-usage-insights/group',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -531,7 +531,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/group-delete',
+    path: '/dsh-usage-insights/group-delete',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -562,7 +562,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/group-create',
+    path: '/dsh-usage-insights/group-create',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -586,7 +586,7 @@ export function apply(ctx: Ctx, config: Config = {}): void {
 
   disposers.push(ctx.webServer.register({
     kind: 'exact',
-    path: '/dsh-plugin-studio/group-list',
+    path: '/dsh-usage-insights/group-list',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
@@ -603,5 +603,5 @@ export function apply(ctx: Ctx, config: Config = {}): void {
   // disabled/unloaded plugin leaves no stale handlers behind.
   ctx.effect(() => () => {
     for (const dispose of disposers) dispose()
-  }, 'dsh-plugin-studio: routes')
+  }, 'dsh-usage-insights: routes')
 }

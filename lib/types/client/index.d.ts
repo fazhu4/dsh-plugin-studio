@@ -1,5 +1,5 @@
 /**
- * dsh-plugin-studio client plugin: registers the manager and market tabs
+ * dsh-usage-insights client plugin: registers the manager and market tabs
  * into the Plugins settings section.
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client';

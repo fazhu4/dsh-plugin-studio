@@ -87,7 +87,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
   useEffect(() => {
     if (pickerEntry === null) return
     const onDocDown = (event: MouseEvent): void => {
-      if (pickerRef.current !== null && !pickerRef.current.contains(event.target as Node) && !(event.target as HTMLElement).closest('.dsh_ps_groupButton')) {
+      if (pickerRef.current !== null && !pickerRef.current.contains(event.target as Node) && !(event.target as HTMLElement).closest('.dsh_usage_groupButton')) {
         setPickerEntry(null)
       }
     }
@@ -228,12 +228,12 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
         badges={badges}
         description={displayName(entry)}
         actions={(
-          <div className="dsh_ps_actionsWrap">
-            <div className="dsh_ps_actions">
-              <span className="dsh_ps_statusDot" data-phase={phase} role="img" aria-label={phase} title={phase} />
+          <div className="dsh_usage_actionsWrap">
+            <div className="dsh_usage_actions">
+              <span className="dsh_usage_statusDot" data-phase={phase} role="img" aria-label={phase} title={phase} />
               <button
                 type="button"
-                className="dsh_ps_btn dsh_ps_btnPrimary"
+                className="dsh_usage_btn dsh_usage_btnPrimary"
                 disabled={protectedModule || busy[entry.entryId] === true}
                 onClick={() => { void onToggle(entry) }}
               >
@@ -241,7 +241,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
               </button>
               <button
                 type="button"
-                className="dsh_ps_btn dsh_ps_groupButton"
+                className="dsh_usage_btn dsh_usage_groupButton"
                 aria-haspopup="listbox"
                 aria-expanded={isPickerTarget}
                 onClick={() => { if (isPickerTarget) { setPickerEntry(null) } else { void openPicker(entry) } }}
@@ -251,7 +251,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
               {entry.group === 'community' && !entry.groupOverridden && entry.packageName !== null ? (
                 <button
                   type="button"
-                  className="dsh_ps_btn dsh_ps_btnDanger"
+                  className="dsh_usage_btn dsh_usage_btnDanger"
                   disabled={protectedModule || busy[entry.entryId] === true}
                   onClick={() => { void onUninstall(entry) }}
                 >
@@ -260,44 +260,44 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
               ) : null}
               <button
                 type="button"
-                className="dsh_ps_btn"
+                className="dsh_usage_btn"
                 onClick={() => { setExpandedId(open ? null : entry.entryId) }}
               >
                 {open ? t('collapse') : t('details')}
               </button>
             </div>
             {isPickerTarget ? (
-              <div className="dsh_ps_popover" ref={pickerRef} role="listbox" aria-label={t('moveToGroup')}>
-                <div className="dsh_ps_popTitle">{t('moveToGroup')}</div>
+              <div className="dsh_usage_popover" ref={pickerRef} role="listbox" aria-label={t('moveToGroup')}>
+                <div className="dsh_usage_popTitle">{t('moveToGroup')}</div>
                 {groupNames.length > 0 ? (
-                  <div className="dsh_ps_groupList">
+                  <div className="dsh_usage_groupList">
                     {groupNames.map(name => (
-                      <button key={name} type="button" role="option" className="dsh_ps_popItem" onClick={() => { void commitMove(name) }}>
+                      <button key={name} type="button" role="option" className="dsh_usage_popItem" onClick={() => { void commitMove(name) }}>
                         {name}
                       </button>
                     ))}
                   </div>
                 ) : null}
-                <div className="dsh_ps_toolbar">
+                <div className="dsh_usage_toolbar">
                   <input
-                    className="dsh_ps_input"
+                    className="dsh_usage_input"
                     type="text"
                     value={pickNew}
                     placeholder={t('newGroupPlaceholder')}
                     onChange={(event) => { setPickNew(event.currentTarget.value) }}
                     onKeyDown={(event) => { if (event.key === 'Enter') void createFromPicker() }}
                   />
-                  <button type="button" className="dsh_ps_btn dsh_ps_btnPrimary" onClick={() => { void createFromPicker() }}>{t('newGroup')}</button>
+                  <button type="button" className="dsh_usage_btn dsh_usage_btnPrimary" onClick={() => { void createFromPicker() }}>{t('newGroup')}</button>
                 </div>
                 {pickerEntry.groupOverridden ? (
-                  <button type="button" className="dsh_ps_popItem dsh_ps_popReset" onClick={() => { void commitMove(null) }}>{t('restoreDefault')}</button>
+                  <button type="button" className="dsh_usage_popItem dsh_usage_popReset" onClick={() => { void commitMove(null) }}>{t('restoreDefault')}</button>
                 ) : null}
               </div>
             ) : null}
           </div>
         )}
         details={open ? (
-          <div className="dsh_ps_details">
+          <div className="dsh_usage_details">
             <div>{t('entryId')}: <code>{entry.entryId}</code></div>
             {entry.version !== null ? <div>{t('version')}: {entry.version}</div> : null}
             {entry.license !== null ? <div>{t('license')}: {entry.license}</div> : null}
@@ -314,36 +314,36 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
     const open = !collapsed[title]
     return (
       <section key={title}>
-        <div className="dsh_ps_groupRow">
+        <div className="dsh_usage_groupRow">
           <button
             type="button"
-            className="dsh_ps_groupHead"
+            className="dsh_usage_groupHead"
             aria-expanded={open}
             onClick={() => { setCollapsed(current => ({ ...current, [title]: !current[title] })) }}
           >
             <span>{open ? '▾' : '▸'}</span>
             <span>{title}</span>
-            <span className="dsh_ps_groupCount">({entries.length})</span>
+            <span className="dsh_usage_groupCount">({entries.length})</span>
           </button>
           {deletable ? (
-            <button type="button" className="dsh_ps_btn dsh_ps_btnDanger dsh_ps_groupDel" onClick={() => { void onDeleteGroup(title) }}>
+            <button type="button" className="dsh_usage_btn dsh_usage_btnDanger dsh_usage_groupDel" onClick={() => { void onDeleteGroup(title) }}>
               {t('deleteGroup')}
             </button>
           ) : null}
         </div>
         {open ? (
           entries.length === 0
-            ? <div className="dsh_ps_empty">{t('emptyGroup')}</div>
-            : <div className="dsh_ps_cards">{entries.map(renderCard)}</div>
+            ? <div className="dsh_usage_empty">{t('emptyGroup')}</div>
+            : <div className="dsh_usage_cards">{entries.map(renderCard)}</div>
         ) : null}
       </section>
     )
   }
 
   return (
-    <div className="dsh_ps_section" aria-busy={state.status === 'loading'}>
-      <div className="dsh_ps_toolbar">
-        <label className="dsh_ps_search">
+    <div className="dsh_usage_section" aria-busy={state.status === 'loading'}>
+      <div className="dsh_usage_toolbar">
+        <label className="dsh_usage_search">
           <input
             type="search"
             value={query}
@@ -355,7 +355,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
         {showNewGroupToolbar ? (
           <>
             <input
-              className="dsh_ps_input dsh_ps_newGroupInput"
+              className="dsh_usage_input dsh_usage_newGroupInput"
               type="text"
               value={toolbarNew}
               placeholder={t('newGroupPlaceholder')}
@@ -363,24 +363,24 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
               onChange={(event) => { setToolbarNew(event.currentTarget.value) }}
               onKeyDown={(event) => { if (event.key === 'Enter') void createFromToolbar(); if (event.key === 'Escape') setShowNewGroupToolbar(false) }}
             />
-            <button type="button" className="dsh_ps_btn dsh_ps_btnPrimary" onClick={() => { void createFromToolbar() }}>{t('confirm')}</button>
-            <button type="button" className="dsh_ps_btn" onClick={() => { setShowNewGroupToolbar(false) }}>{t('cancel')}</button>
+            <button type="button" className="dsh_usage_btn dsh_usage_btnPrimary" onClick={() => { void createFromToolbar() }}>{t('confirm')}</button>
+            <button type="button" className="dsh_usage_btn" onClick={() => { setShowNewGroupToolbar(false) }}>{t('cancel')}</button>
           </>
         ) : (
-          <button type="button" className="dsh_ps_btn dsh_ps_btnPrimary" onClick={() => { setShowNewGroupToolbar(true) }}>
+          <button type="button" className="dsh_usage_btn dsh_usage_btnPrimary" onClick={() => { setShowNewGroupToolbar(true) }}>
             + {t('newGroup')}
           </button>
         )}
-        <button type="button" className="dsh_ps_btn" onClick={retry}>{t('retry')}</button>
+        <button type="button" className="dsh_usage_btn" onClick={retry}>{t('retry')}</button>
       </div>
-      <div className="dsh_ps_notice" data-error={notice?.error === true ? 'true' : undefined}>
+      <div className="dsh_usage_notice" data-error={notice?.error === true ? 'true' : undefined}>
         {notice !== null ? notice.text : t('restartNotice')}
       </div>
-      {state.status === 'loading' ? <div className="dsh_ps_status">{t('search')}</div> : null}
+      {state.status === 'loading' ? <div className="dsh_usage_status">{t('search')}</div> : null}
       {state.status === 'error' ? (
-        <div className="dsh_ps_status">
+        <div className="dsh_usage_status">
           {t('loadError')}
-          <button type="button" className="dsh_ps_btn" onClick={retry}>{t('retry')}</button>
+          <button type="button" className="dsh_usage_btn" onClick={retry}>{t('retry')}</button>
         </div>
       ) : null}
       {state.status === 'ready' ? (

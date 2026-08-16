@@ -1,18 +1,18 @@
 /**
- * dsh-plugin-studio host plugin. Loopback-only HTTP routes over webServer:
+ * dsh-usage-insights host plugin. Loopback-only HTTP routes over webServer:
  *
- *   GET  /dsh-plugin-studio/list      — grouped, enriched plugin inventory
- *   POST /dsh-plugin-studio/toggle    — enable/disable via user patch layer
- *   GET  /dsh-plugin-studio/search    — GitHub dsh-plugin market search
- *   POST /dsh-plugin-studio/install   — pnpm add + bundle reconcile
- *   POST /dsh-plugin-studio/uninstall — pnpm remove + bundle reconcile
+ *   GET  /dsh-usage-insights/list      — grouped, enriched plugin inventory
+ *   POST /dsh-usage-insights/toggle    — enable/disable via user patch layer
+ *   GET  /dsh-usage-insights/search    — GitHub dsh-plugin market search
+ *   POST /dsh-usage-insights/install   — pnpm add + bundle reconcile
+ *   POST /dsh-usage-insights/uninstall — pnpm remove + bundle reconcile
  *
  * Services injected: webServer, loader. All DSH APIs are consumed
  * structurally (duck-typed faces) so this package needs no DSH imports.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 /** Plugin metadata (Cordis). */
-export declare const name = "dsh-plugin-studio";
+export declare const name = "dsh-usage-insights";
 /** Declared service injections. */
 export declare const inject: string[];
 /** Plugin configuration. */
