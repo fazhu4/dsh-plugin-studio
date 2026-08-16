@@ -59,6 +59,8 @@ export interface PluginManagerLocaleKeyMap {
     deleteGroup: string;
     deleteGroupConfirm: string;
     groupUpdated: string;
+    emptyGroup: string;
+    groupNameReserved: string;
     cancel: string;
     confirm: string;
 }
@@ -117,6 +119,8 @@ export declare const zh: {
     deleteGroup: string;
     deleteGroupConfirm: string;
     groupUpdated: string;
+    emptyGroup: string;
+    groupNameReserved: string;
     cancel: string;
     confirm: string;
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isValidEntryId, isValidInstallSpec, isValidPackageName } from '../src/validate.ts'
+import { isValidEntryId, isValidGroupName, isValidInstallSpec, isValidPackageName } from '../src/validate.ts'
 
 describe('isValidInstallSpec', () => {
   it('accepts npm package names', () => {
@@ -26,6 +26,11 @@ describe('isValidInstallSpec', () => {
     expect(isValidInstallSpec('a'.repeat(101))).toBe(false)
     expect(isValidInstallSpec('')).toBe(false)
   })
+  it('rejects empty / segments (a//b, a/b/)', () => {
+    expect(isValidInstallSpec('a//b')).toBe(false)
+    expect(isValidInstallSpec('a/b/')).toBe(false)
+    expect(isValidInstallSpec('a/')).toBe(false)
+  })
 })
 
 describe('isValidPackageName', () => {
@@ -50,5 +55,23 @@ describe('isValidEntryId', () => {
     expect(isValidEntryId('include:"x"')).toBe(false)
     expect(isValidEntryId('a\nb')).toBe(false)
     expect(isValidEntryId('a b')).toBe(false)
+  })
+})
+
+describe('isValidGroupName', () => {
+  it('accepts normal and CJK names', () => {
+    expect(isValidGroupName('我的工具')).toBe(true)
+    expect(isValidGroupName('test')).toBe(true)
+    expect(isValidGroupName('a b')).toBe(true)
+  })
+  it('rejects reserved names', () => {
+    expect(isValidGroupName('official')).toBe(false)
+    expect(isValidGroupName('community')).toBe(false)
+    expect(isValidGroupName('Official')).toBe(true) // case-sensitive
+  })
+  it('rejects empty, overlong, and control chars', () => {
+    expect(isValidGroupName('')).toBe(false)
+    expect(isValidGroupName('a'.repeat(51))).toBe(false)
+    expect(isValidGroupName('a\nb')).toBe(false)
   })
 })

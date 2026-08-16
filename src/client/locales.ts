@@ -62,6 +62,8 @@ export interface PluginManagerLocaleKeyMap {
   deleteGroup: string
   deleteGroupConfirm: string
   groupUpdated: string
+  emptyGroup: string
+  groupNameReserved: string
   cancel: string
   confirm: string
 }
@@ -121,6 +123,8 @@ export const zh = {
   deleteGroup: '删除分组',
   deleteGroupConfirm: '删除该分组？其中插件将回到默认分组（官方/社区）。',
   groupUpdated: '分组已更新',
+  emptyGroup: '该分组暂无插件。',
+  groupNameReserved: '不能使用"official"或"community"作为分组名。',
   cancel: '取消',
   confirm: '确定',
 } satisfies Record<string, string>
@@ -183,6 +187,8 @@ export const en: Record<PluginManagerLocaleKey, string> = {
   deleteGroup: 'Delete group',
   deleteGroupConfirm: 'Delete this group? Its plugins return to their default group (official/community).',
   groupUpdated: 'Group updated',
+  emptyGroup: 'This group has no plugins.',
+  groupNameReserved: 'Cannot use "official" or "community" as a group name.',
   cancel: 'Cancel',
   confirm: 'OK',
 }

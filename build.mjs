@@ -59,8 +59,8 @@ await build({
 // Type declarations: emit with tsc. tsconfig.build.json overrides the
 // typecheck-mode noEmit and pins rootDir=src so declarations land at
 // lib/types/index.d.ts / lib/types/client/index.d.ts — exactly where
-// package.json exports.types points. Emission stays best-effort: a failure
-// warns instead of aborting the bundles.
+// package.json exports.types points. A failure here makes the build
+// non-zero so `pnpm run check` (and `prepublishOnly`) catches it.
 try {
   rmSync(join(root, 'lib/types'), { recursive: true, force: true })
   mkdirSync(join(root, 'lib/types'), { recursive: true })
@@ -69,7 +69,8 @@ try {
     stdio: 'ignore',
   })
 } catch {
-  console.warn('[dsh-plugin-manager] warning: type declaration emission failed (exports.types will be missing)')
+  console.error('[dsh-plugin-manager] error: type declaration emission failed (exports.types will be missing)')
+  process.exitCode = 1
 }
 
 // Manifest marker so the profile loader can sanity-check the bundle.

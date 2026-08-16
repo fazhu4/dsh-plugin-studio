@@ -333,7 +333,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
         </div>
         {open ? (
           entries.length === 0
-            ? <div className="dsh_pm_empty">{t('search')}</div>
+            ? <div className="dsh_pm_empty">{t('emptyGroup')}</div>
             : <div className="dsh_pm_cards">{entries.map(renderCard)}</div>
         ) : null}
       </section>

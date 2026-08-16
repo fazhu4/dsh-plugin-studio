@@ -8,7 +8,11 @@
 export declare const SPEC_RE: RegExp;
 /** Loader entry ids: word chars plus `: . / -` (e.g. include:llm). */
 export declare const ENTRY_ID_RE: RegExp;
-/** Whether an install spec (npm name or owner/repo) is safe to hand to pnpm. */
+/**
+ * Whether an install spec (npm name or owner/repo) is safe to hand to pnpm.
+ * Allows npm names (including scoped `@scope/name`) and github `owner/repo`
+ * (exactly two non-empty `/` segments).
+ */
 export declare function isValidInstallSpec(spec: string): boolean;
 /** Whether a package name is safe to hand to pnpm remove. */
 export declare function isValidPackageName(name: string): boolean;
@@ -16,6 +20,8 @@ export declare function isValidPackageName(name: string): boolean;
 export declare function isValidEntryId(id: string): boolean;
 /**
  * Whether a custom group name is safe: non-empty, ≤ 50 chars, no control/newline
- * characters (the rest is user freedom — CJK, spaces, emoji allowed).
+ * characters, and not a reserved name (`official`/`community`) — overriding
+ * those would collide with the auto-detected buckets and make entries
+ * disappear from the custom-group list.
  */
 export declare function isValidGroupName(name: string): boolean;

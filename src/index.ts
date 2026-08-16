@@ -293,19 +293,24 @@ const ALLOW_BUILDS_HINT =
 
 async function installPackage(paths: ProfilePaths, spec: string): Promise<InstallResponse | OpError> {
   const pnpmSpec = spec.includes('/') && !spec.startsWith('@') ? `github:${spec}` : spec
+  // Snapshot the dependency set before install so the newly-added package is
+  // detected from the manifest rather than derived from the request spec.
+  const before = await readManifest(paths.dir)
+  const beforeDeps = new Set(Object.keys(before.dependencies ?? {}))
   const result = await runPnpm(paths.dir, ['add', pnpmSpec])
   if (result.code !== 0) {
     const hint = /allowBuilds|Ignored build scripts/i.test(result.output) ? ` ${ALLOW_BUILDS_HINT}` : ''
     return { ok: false, message: `pnpm add 失败（退出码 ${result.code}）${hint}\n${result.output.slice(-800)}` }
   }
   await withLock(() => reconcileBundles(paths.dir))
-  const bundleName = pnpmSpec.startsWith('github:') ? pnpmSpec.slice('github:'.length).split('#')[0]!.split('/')[1]! : pnpmSpec
-  const manifest = await readManifest(paths.dir)
-  const depNames = Object.keys(manifest.dependencies ?? {})
-  const installed = depNames.find(name => name.endsWith(`/${bundleName}`) || name === bundleName)
+  const after = await readManifest(paths.dir)
+  const newDeps = Object.keys(after.dependencies ?? {}).filter(name => !beforeDeps.has(name))
+  const installed = newDeps.length > 0 ? newDeps[0] : undefined
   const warning = installed !== undefined && !await packageIsBundle(installed, paths.dir)
     ? '已安装为普通依赖：该包未声明 dsh.bundle，重启后不会作为插件层激活。'
-    : undefined
+    : installed === undefined
+      ? '已安装，但未能从 profile manifest 自动识别新增依赖名称；请重启服务后确认。'
+      : undefined
   pendingRestart = true
   return { ok: true, restartRequired: true, ...(warning === undefined ? {} : { warning }) }
 }
