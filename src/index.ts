@@ -363,7 +363,9 @@ export function apply(ctx: Ctx, config: Config = {}): void {
         } catch {
           // Fresh file.
         }
-        await writeAtomic(paths.patchFile, upsertDisabled(patchText, entry.options.id, body.enabled))
+        // upsertDisabled takes the DESIRED DISABLED state — invert the
+        // request's enabled flag (enabled:false → disabled:true).
+        await writeAtomic(paths.patchFile, upsertDisabled(patchText, entry.options.id, !body.enabled))
         json(res, 200, { ok: true } satisfies ToggleResponse)
       } catch (error) {
         fail(res, `toggle failed: ${error instanceof Error ? error.message : String(error)}`)
