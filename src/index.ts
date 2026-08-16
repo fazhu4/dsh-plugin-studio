@@ -20,6 +20,7 @@ import { extractMeta, readmeSummary, type PackageMeta } from './meta.ts'
 import { patchStateOf, upsertDisabled } from './patch.ts'
 import { parseRepoManifest, parseSearchResponse, type GitHubRepo } from './market.ts'
 import { mergeProtectedModules } from './protected.ts'
+import { shouldHideUninstalledEntry } from './uninstall-state.ts'
 import { isValidEntryId, isValidGroupName, isValidInstallSpec, isValidPackageName } from './validate.ts'
 import {
   packageIsBundle,
@@ -102,6 +103,8 @@ const require = createRequire(import.meta.url)
 const searchCache = new Map<string, { at: number; repos: GitHubRepo[] }>()
 /** Set after an install/uninstall; cleared only by a process restart. */
 let pendingRestart = false
+/** Package names removed from the profile but still present in the live loader. */
+const pendingUninstalls = new Set<string>()
 
 /**
  * Serialize read-modify-write sections (patch-file toggles, manifest
@@ -178,6 +181,7 @@ async function buildList(ctx: Ctx, paths: ProfilePaths): Promise<ListResponse> {
     } catch {
       // Unresolvable entry: metadata stays null.
     }
+    if (shouldHideUninstalledEntry(moduleName, meta.name, pendingUninstalls)) continue
     entries.push({
       entryId: entry.id,
       moduleName,
@@ -306,6 +310,7 @@ async function installPackage(paths: ProfilePaths, spec: string): Promise<Instal
   const after = await readManifest(paths.dir)
   const newDeps = Object.keys(after.dependencies ?? {}).filter(name => !beforeDeps.has(name))
   const installed = newDeps.length > 0 ? newDeps[0] : undefined
+  if (installed !== undefined) pendingUninstalls.delete(installed)
   const warning = installed !== undefined && !await packageIsBundle(installed, paths.dir)
     ? '已安装为普通依赖：该包未声明 dsh.bundle，重启后不会作为插件层激活。'
     : installed === undefined
@@ -338,6 +343,7 @@ async function uninstallPackage(paths: ProfilePaths, packageName: string): Promi
     return { ok: false, message: `pnpm remove 失败（退出码 ${result.code}）\n${result.output.slice(-800)}` }
   }
   await withLock(() => reconcileBundles(paths.dir))
+  pendingUninstalls.add(packageName)
   pendingRestart = true
   return { ok: true, restartRequired: true }
 }

@@ -23,7 +23,7 @@ DSH（DeepSeek Harness）插件管理器：在 Web 设置页中**按官方/社�
 
 ```bash
 # 从 npm 安装已发布包
-dsh plugin --profile web add dsh-plugin-studio@0.2.0
+dsh plugin --profile web add dsh-plugin-studio@0.2.1
 
 # 从本仓库安装（推荐先构建）
 dsh plugin --profile web add file:/path/to/dsh-plugin-studio
@@ -33,6 +33,8 @@ dsh plugin --profile web add github:<your-name>/dsh-plugin-studio
 ```
 
 安装后**重启 dsh 服务**，刷新页面 → 设置 → 插件 → 「插件管理」与「插件市场」。
+
+社区插件卸载成功后会立即从当前列表隐藏；重启 dsh 服务后完成运行时移除。
 
 包名、运行时插件 ID、HTTP 路由和本地分组存储文件统一使用 `dsh-plugin-studio`。
 
