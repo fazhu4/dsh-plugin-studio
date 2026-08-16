@@ -156,7 +156,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
         description={displayName(entry)}
         actions={(
           <>
-            <span className="dsh_pm_statusDot" data-phase={phase} title={phase} />
+            <span className="dsh_pm_statusDot" data-phase={phase} role="img" aria-label={phase} title={phase} />
             <button
               type="button"
               className="dsh_pm_btn dsh_pm_btnPrimary"

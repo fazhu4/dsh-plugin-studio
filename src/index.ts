@@ -20,6 +20,7 @@ import { extractMeta, readmeSummary, type PackageMeta } from './meta.ts'
 import { patchStateOf, upsertDisabled } from './patch.ts'
 import { parseRepoManifest, parseSearchResponse, type GitHubRepo } from './market.ts'
 import { mergeProtectedModules } from './protected.ts'
+import { isValidEntryId, isValidInstallSpec, isValidPackageName } from './validate.ts'
 import {
   packageIsBundle,
   profilePathsFromBaseUrl,
@@ -73,6 +74,7 @@ interface Ctx {
   baseUrl: string
   webServer: WebServerFace
   loader: LoaderFace
+  effect<T>(fn: () => T, label?: string): T
 }
 
 // --- runtime mirror of Cordis FiberState --------------------------------------
@@ -98,6 +100,18 @@ const require = createRequire(import.meta.url)
 const searchCache = new Map<string, { at: number; repos: GitHubRepo[] }>()
 /** Set after an install/uninstall; cleared only by a process restart. */
 let pendingRestart = false
+
+/**
+ * Serialize read-modify-write sections (patch-file toggles, manifest
+ * reconcile): two concurrent toggles must not interleave their read → write
+ * cycles or one update is silently lost.
+ */
+let mutex: Promise<unknown> = Promise.resolve()
+function withLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = mutex.then(fn, fn)
+  mutex = run.then(() => {}, () => {})
+  return run
+}
 
 // --- HTTP helpers ---------------------------------------------------------------
 
@@ -265,7 +279,7 @@ async function installPackage(paths: ProfilePaths, spec: string): Promise<Instal
     const hint = /allowBuilds|Ignored build scripts/i.test(result.output) ? ` ${ALLOW_BUILDS_HINT}` : ''
     return { ok: false, message: `pnpm add 失败（退出码 ${result.code}）${hint}\n${result.output.slice(-800)}` }
   }
-  await reconcileBundles(paths.dir)
+  await withLock(() => reconcileBundles(paths.dir))
   const bundleName = pnpmSpec.startsWith('github:') ? pnpmSpec.slice('github:'.length).split('#')[0]!.split('/')[1]! : pnpmSpec
   const manifest = await readManifest(paths.dir)
   const depNames = Object.keys(manifest.dependencies ?? {})
@@ -299,7 +313,7 @@ async function uninstallPackage(paths: ProfilePaths, packageName: string): Promi
   if (result.code !== 0) {
     return { ok: false, message: `pnpm remove 失败（退出码 ${result.code}）\n${result.output.slice(-800)}` }
   }
-  await reconcileBundles(paths.dir)
+  await withLock(() => reconcileBundles(paths.dir))
   pendingRestart = true
   return { ok: true, restartRequired: true }
 }
@@ -324,7 +338,10 @@ export function apply(ctx: Ctx, config: Config = {}): void {
     throw new Error(`dsh-plugin-manager: cannot resolve the profile directory from ctx.baseUrl (${String(ctx.baseUrl)}): ${String(error)}`)
   }
 
-  ctx.webServer.register({
+  // Route disposers, released when this plugin's fiber unloads.
+  const disposers: Array<() => void> = []
+
+  disposers.push(ctx.webServer.register({
     kind: 'exact',
     path: '/dsh-plugin-manager/list',
     handler: async (req, res) => {
@@ -335,16 +352,16 @@ export function apply(ctx: Ctx, config: Config = {}): void {
         fail(res, `list failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
-  })
+  }))
 
-  ctx.webServer.register({
+  disposers.push(ctx.webServer.register({
     kind: 'exact',
     path: '/dsh-plugin-manager/toggle',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
         const body = await readJsonBody(req) as Partial<ToggleRequest>
-        if (typeof body.entryId !== 'string' || typeof body.enabled !== 'boolean') {
+        if (typeof body.entryId !== 'string' || !isValidEntryId(body.entryId) || typeof body.enabled !== 'boolean') {
           fail(res, 'invalid body: { entryId: string, enabled: boolean }')
           return
         }
@@ -357,23 +374,28 @@ export function apply(ctx: Ctx, config: Config = {}): void {
           fail(res, '该插件受保护，禁止切换。')
           return
         }
-        let patchText = ''
-        try {
-          patchText = await readFile(paths.patchFile, 'utf8')
-        } catch {
-          // Fresh file.
-        }
         // upsertDisabled takes the DESIRED DISABLED state — invert the
-        // request's enabled flag (enabled:false → disabled:true).
-        await writeAtomic(paths.patchFile, upsertDisabled(patchText, entry.options.id, !body.enabled))
+        // request's enabled flag (enabled:false → disabled:true). The whole
+        // read-modify-write runs under the mutex so concurrent toggles cannot
+        // clobber each other.
+        const toggled = await withLock(async () => {
+          let patchText = ''
+          try {
+            patchText = await readFile(paths.patchFile, 'utf8')
+          } catch {
+            // Fresh file.
+          }
+          return upsertDisabled(patchText, entry.options.id, !body.enabled)
+        })
+        await writeAtomic(paths.patchFile, toggled)
         json(res, 200, { ok: true } satisfies ToggleResponse)
       } catch (error) {
         fail(res, `toggle failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
-  })
+  }))
 
-  ctx.webServer.register({
+  disposers.push(ctx.webServer.register({
     kind: 'exact',
     path: '/dsh-plugin-manager/search',
     handler: async (req, res) => {
@@ -405,41 +427,47 @@ export function apply(ctx: Ctx, config: Config = {}): void {
         fail(res, `search failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
-  })
+  }))
 
-  ctx.webServer.register({
+  disposers.push(ctx.webServer.register({
     kind: 'exact',
     path: '/dsh-plugin-manager/install',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
         const body = await readJsonBody(req) as Partial<InstallRequest>
-        if (typeof body.spec !== 'string' || body.spec.trim() === '') {
-          fail(res, 'invalid body: { spec: string }')
+        if (typeof body.spec !== 'string' || !isValidInstallSpec(body.spec)) {
+          fail(res, 'invalid body: { spec: string } (npm name or owner/repo)')
           return
         }
-        json(res, 200, await installPackage(paths, body.spec.trim()))
+        json(res, 200, await installPackage(paths, body.spec))
       } catch (error) {
         fail(res, `install failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
-  })
+  }))
 
-  ctx.webServer.register({
+  disposers.push(ctx.webServer.register({
     kind: 'exact',
     path: '/dsh-plugin-manager/uninstall',
     handler: async (req, res) => {
       if (!isLoopback(req)) { fail(res, 'loopback only'); return }
       try {
         const body = await readJsonBody(req) as Partial<UninstallRequest>
-        if (typeof body.packageName !== 'string' || body.packageName.trim() === '') {
+        if (typeof body.packageName !== 'string' || !isValidPackageName(body.packageName)) {
           fail(res, 'invalid body: { packageName: string }')
           return
         }
-        json(res, 200, await uninstallPackage(paths, body.packageName.trim()))
+        json(res, 200, await uninstallPackage(paths, body.packageName))
       } catch (error) {
         fail(res, `uninstall failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
-  })
+  }))
+
+  // Unload lifecycle: drop every route when this fiber goes away, so a
+  // disabled/unloaded plugin leaves no stale handlers behind.
+  ctx.effect(() => () => {
+    for (const dispose of disposers) dispose()
+  }, 'dsh-plugin-manager: routes')
 }

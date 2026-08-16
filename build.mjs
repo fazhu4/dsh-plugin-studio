@@ -4,7 +4,7 @@
  * .d.ts declarations for the public entry points.
  */
 import { build } from 'esbuild'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -56,15 +56,20 @@ await build({
   logLevel: 'info',
 })
 
-// Type declarations: emit with tsc (best-effort; failure is non-fatal for bundling).
+// Type declarations: emit with tsc. tsconfig.build.json overrides the
+// typecheck-mode noEmit and pins rootDir=src so declarations land at
+// lib/types/index.d.ts / lib/types/client/index.d.ts — exactly where
+// package.json exports.types points. Emission stays best-effort: a failure
+// warns instead of aborting the bundles.
 try {
+  rmSync(join(root, 'lib/types'), { recursive: true, force: true })
   mkdirSync(join(root, 'lib/types'), { recursive: true })
-  execSync('npx tsc --emitDeclarationOnly --declaration --outDir lib/types', {
+  execSync('npx tsc -p tsconfig.build.json --emitDeclarationOnly --declaration', {
     cwd: root,
     stdio: 'ignore',
   })
 } catch {
-  // Declaration emission is best-effort; the bundles are the runtime artifact.
+  console.warn('[dsh-plugin-manager] warning: type declaration emission failed (exports.types will be missing)')
 }
 
 // Manifest marker so the profile loader can sanity-check the bundle.

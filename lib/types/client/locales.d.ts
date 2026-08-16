@@ -1,0 +1,106 @@
+/** Locale dictionaries for the plugin manager tabs. */
+declare module '@deepseek-ai/dsh-client-ui-slots' {
+    interface LocaleNamespaceMap {
+        'pluginManager': PluginManagerLocaleKey;
+    }
+}
+export declare const NS = "pluginManager";
+export interface PluginManagerLocaleKeyMap {
+    tabManager: string;
+    tabMarket: string;
+    search: string;
+    searchPlaceholder: string;
+    groupOfficial: string;
+    groupCommunity: string;
+    protected: string;
+    patchDisabled: string;
+    patchForced: string;
+    enable: string;
+    disable: string;
+    enabledTag: string;
+    disabledTag: string;
+    uninstall: string;
+    uninstallConfirm: string;
+    uninstalling: string;
+    details: string;
+    collapse: string;
+    noDescription: string;
+    loadError: string;
+    retry: string;
+    restartNotice: string;
+    marketDefaultQuery: string;
+    marketSearching: string;
+    marketEmpty: string;
+    marketError: string;
+    boardTop: string;
+    boardRising: string;
+    boardRisingTitle: string;
+    backToBoard: string;
+    npmDirect: string;
+    githubInstall: string;
+    dshBundleHint: string;
+    install: string;
+    installing: string;
+    installDone: string;
+    installWarning: string;
+    version: string;
+    homepage: string;
+    repository: string;
+    license: string;
+    readme: string;
+    entryId: string;
+    operationFailed: string;
+    uninstallDone: string;
+}
+/** Simplified Chinese dictionary and key source of truth. */
+export declare const zh: {
+    tabManager: string;
+    tabMarket: string;
+    search: string;
+    searchPlaceholder: string;
+    groupOfficial: string;
+    groupCommunity: string;
+    protected: string;
+    patchDisabled: string;
+    patchForced: string;
+    enable: string;
+    disable: string;
+    enabledTag: string;
+    disabledTag: string;
+    uninstall: string;
+    uninstallConfirm: string;
+    uninstalling: string;
+    details: string;
+    collapse: string;
+    noDescription: string;
+    loadError: string;
+    retry: string;
+    restartNotice: string;
+    marketDefaultQuery: string;
+    marketSearching: string;
+    marketEmpty: string;
+    marketError: string;
+    boardTop: string;
+    boardRising: string;
+    boardRisingTitle: string;
+    backToBoard: string;
+    npmDirect: string;
+    githubInstall: string;
+    dshBundleHint: string;
+    install: string;
+    installing: string;
+    installDone: string;
+    installWarning: string;
+    version: string;
+    homepage: string;
+    repository: string;
+    license: string;
+    readme: string;
+    entryId: string;
+    operationFailed: string;
+    uninstallDone: string;
+};
+/** Plugin manager locale key union. */
+export type PluginManagerLocaleKey = keyof typeof zh;
+/** English dictionary checked against the Chinese key set. */
+export declare const en: Record<PluginManagerLocaleKey, string>;
