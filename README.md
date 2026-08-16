@@ -60,6 +60,13 @@ pnpm run build        # 仅构建（lib/index.js 宿主 + lib/client.js 客户�
 - 安装/卸载等价于 CLI `dsh plugin add/remove`，pnpm 走完整 TLS 校验
 - 受保护行硬拦截开关与卸载
 
+## 已知限制
+
+- 「高收藏」榜单按 GitHub `dsh-plugin` 话题全量排序，可能包含官方主仓库（如 deepseek-ai/deepseek-harness）——安装前请确认卡片上的 npm 包名/仓库地址
+- 仓库根 `package.json` 探测或 npm 注册表探测失败时，卡片降级为「GitHub 安装」标签
+- 「增长最快」为近似（近 90 天新建仓库按 star 排序），GitHub 无收藏增速接口
+- GitHub 搜索未带 token 时受限流（10 次/分钟），结果 60 秒缓存
+
 ## License
 
 MIT
