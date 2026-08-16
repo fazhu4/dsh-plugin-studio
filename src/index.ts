@@ -33,7 +33,7 @@ import {
   type ProfilePaths,
 } from './profile.ts'
 import type {
-  EntryInfo, GroupDeleteRequest, GroupRequest, GroupResponse, InstallRequest, InstallResponse, ListResponse, MarketItem,
+  EntryInfo, GroupCreateRequest, GroupDeleteRequest, GroupRequest, GroupResponse, InstallRequest, InstallResponse, ListResponse, MarketItem,
   OpError, ToggleRequest, ToggleResponse, UninstallRequest, UninstallResponse,
 } from './contract.ts'
 
@@ -155,13 +155,13 @@ async function buildList(ctx: Ctx, paths: ProfilePaths): Promise<ListResponse> {
   } catch {
     // No patch file yet — everything is in its default state.
   }
-  const overrides = await readGroups(paths.groupsFile)
+  const groupState = await readGroups(paths.groupsFile)
   const entries: EntryInfo[] = []
   for (const entry of ctx.loader.entries()) {
     if (entry.options.group) continue
     const moduleName = entry.options.name
     const autoGroup = classify(moduleName, spec => require.resolve(spec), paths.nodeModules, paths.closureNodeModules)
-    const resolved = resolveGroupName(moduleName, autoGroup, overrides)
+    const resolved = resolveGroupName(moduleName, autoGroup, groupState.overrides)
     let meta: PackageMeta = {
       name: null, version: null, description: null,
       homepage: null, repository: null, license: null,
@@ -199,16 +199,18 @@ async function buildList(ctx: Ctx, paths: ProfilePaths): Promise<ListResponse> {
     })
   }
   // Bucket custom groups by name (name-ordered), entries keep loader order.
-  const customMap = new Map<string, EntryInfo[]>()
+  // Declared (possibly empty) groups show even with no members yet.
+  const customMembers = new Map<string, EntryInfo[]>()
   for (const entry of entries) {
     if (entry.group === 'official' || entry.group === 'community') continue
-    const list = customMap.get(entry.group) ?? []
+    const list = customMembers.get(entry.group) ?? []
     list.push(entry)
-    customMap.set(entry.group, list)
+    customMembers.set(entry.group, list)
   }
-  const customGroups = [...customMap.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([name, members]) => ({ name, entries: members }))
+  const allCustomNames = new Set([...groupState.declared, ...customMembers.keys()])
+  const customGroups = [...allCustomNames]
+    .sort((a, b) => a.localeCompare(b))
+    .map(name => ({ name, entries: customMembers.get(name) ?? [] }))
   return {
     official: entries.filter(entry => entry.group === 'official'),
     community: entries.filter(entry => entry.group === 'community'),
@@ -500,13 +502,14 @@ export function apply(ctx: Ctx, config: Config = {}): void {
           return
         }
         await withLock(async () => {
-          const overrides = await readGroups(paths.groupsFile)
+          const state = await readGroups(paths.groupsFile)
           if (groupName === null || groupName === undefined) {
-            overrides.delete(moduleName)
+            state.overrides.delete(moduleName)
           } else {
-            overrides.set(moduleName, groupName)
+            state.overrides.set(moduleName, groupName)
+            state.declared.add(groupName)
           }
-          await writeGroups(paths.groupsFile, overrides)
+          await writeGroups(paths.groupsFile, state)
         })
         json(res, 200, { ok: true } satisfies GroupResponse)
       } catch (error) {
@@ -528,19 +531,59 @@ export function apply(ctx: Ctx, config: Config = {}): void {
         }
         const groupName = body.groupName
         await withLock(async () => {
-          const overrides = await readGroups(paths.groupsFile)
-          let changed = false
-          for (const [moduleName, name] of [...overrides]) {
+          const state = await readGroups(paths.groupsFile)
+          let changed = state.declared.has(groupName)
+          state.declared.delete(groupName)
+          for (const [moduleName, name] of [...state.overrides]) {
             if (name === groupName) {
-              overrides.delete(moduleName)
+              state.overrides.delete(moduleName)
               changed = true
             }
           }
-          if (changed) await writeGroups(paths.groupsFile, overrides)
+          if (changed) await writeGroups(paths.groupsFile, state)
         })
         json(res, 200, { ok: true } satisfies GroupResponse)
       } catch (error) {
         fail(res, `group-delete failed: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    },
+  }))
+
+  disposers.push(ctx.webServer.register({
+    kind: 'exact',
+    path: '/dsh-plugin-manager/group-create',
+    handler: async (req, res) => {
+      if (!isLoopback(req)) { fail(res, 'loopback only'); return }
+      try {
+        const body = await readJsonBody(req) as Partial<GroupCreateRequest>
+        if (typeof body.groupName !== 'string' || !isValidGroupName(body.groupName)) {
+          fail(res, 'invalid body: { groupName: string }')
+          return
+        }
+        const groupName = body.groupName
+        await withLock(async () => {
+          const state = await readGroups(paths.groupsFile)
+          state.declared.add(groupName)
+          await writeGroups(paths.groupsFile, state)
+        })
+        json(res, 200, { ok: true } satisfies GroupResponse)
+      } catch (error) {
+        fail(res, `group-create failed: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    },
+  }))
+
+  disposers.push(ctx.webServer.register({
+    kind: 'exact',
+    path: '/dsh-plugin-manager/group-list',
+    handler: async (req, res) => {
+      if (!isLoopback(req)) { fail(res, 'loopback only'); return }
+      try {
+        const state = await readGroups(paths.groupsFile)
+        const names = new Set([...state.declared, ...state.overrides.values()])
+        json(res, 200, [...names].sort((a, b) => a.localeCompare(b)))
+      } catch (error) {
+        fail(res, `group-list failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
   }))

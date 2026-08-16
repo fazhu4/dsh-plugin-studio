@@ -57,10 +57,17 @@ export declare function reconcileBundles(profileDir: string): Promise<boolean>;
 /** Shape of the plugin-private group-override file. */
 export interface GroupStore {
     readonly version: 1;
-    /** moduleName → custom group name. */
+    /** moduleName → custom group name (membership overrides). */
     readonly entries: Record<string, string>;
+    /** Custom groups explicitly created but not yet holding any plugin. */
+    readonly declared: string[];
 }
-/** Read moduleName → groupName overrides; a missing/corrupt file yields empty. */
-export declare function readGroups(file: string): Promise<Map<string, string>>;
-/** Persist moduleName → groupName overrides atomically. */
-export declare function writeGroups(file: string, entries: ReadonlyMap<string, string>): Promise<void>;
+/** The full parsed group state. */
+export interface GroupState {
+    readonly overrides: Map<string, string>;
+    readonly declared: Set<string>;
+}
+/** Read the group state; a missing/corrupt file yields empty. */
+export declare function readGroups(file: string): Promise<GroupState>;
+/** Persist the group state atomically. */
+export declare function writeGroups(file: string, state: GroupState): Promise<void>;

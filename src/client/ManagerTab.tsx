@@ -1,10 +1,11 @@
 /**
  * Plugin manager tab: official/community grouped inventory with localized
  * descriptions, enable/disable toggles (user patch layer + HMR), details,
- * community-only uninstall, and user custom groups (move/delete).
+ * community-only uninstall, and user custom groups (create/move/delete).
+ * Custom-group assignment uses a popover anchored next to the card action.
  */
 
-import { useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { describe } from '../descriptions.ts'
 import type {
@@ -20,6 +21,8 @@ export interface ManagerTabInjected {
   uninstall: (packageName: string) => Promise<UninstallResponse | OpError>
   group: (moduleName: string, groupName: string | null) => Promise<GroupResponse | OpError>
   groupDelete: (groupName: string) => Promise<GroupResponse | OpError>
+  groupCreate: (groupName: string) => Promise<GroupResponse | OpError>
+  groupList: () => Promise<string[]>
   getLang: () => 'zh' | 'en'
   subscribeLang: (listener: () => void) => () => void
 }
@@ -33,11 +36,6 @@ type ViewState =
   | { readonly status: 'loading' }
   | { readonly status: 'error' }
   | { readonly status: 'ready'; readonly data: ListResponse }
-
-interface Picker {
-  readonly entry: EntryInfo
-  readonly groups: readonly string[]
-}
 
 /** Compact a module specifier (same rule as the shipped inventory tab). */
 function moduleShortName(moduleName: string): string {
@@ -55,7 +53,7 @@ function matches(entry: EntryInfo, query: string): boolean {
 }
 
 export function ManagerTab(props: ManagerTabProps): ReactNode {
-  const { list, toggle, uninstall, group, groupDelete, getLang, subscribeLang, t } = props
+  const { list, toggle, uninstall, group, groupDelete, groupCreate, groupList, getLang, subscribeLang, t } = props
   const [request, setRequest] = useState(0)
   const [query, setQuery] = useState('')
   const [state, setState] = useState<ViewState>({ status: 'loading' })
@@ -64,8 +62,13 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [busy, setBusy] = useState<Record<string, boolean>>({})
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null)
-  const [picker, setPicker] = useState<Picker | null>(null)
-  const [newGroupName, setNewGroupName] = useState('')
+  // Custom-group assignment UI.
+  const [pickerEntry, setPickerEntry] = useState<EntryInfo | null>(null)
+  const [groupNames, setGroupNames] = useState<string[]>([])
+  const [pickNew, setPickNew] = useState('')
+  const [showNewGroupToolbar, setShowNewGroupToolbar] = useState(false)
+  const [toolbarNew, setToolbarNew] = useState('')
+  const pickerRef = useRef<HTMLDivElement | null>(null)
   const [, force] = useReducer((x: number) => x + 1, 0)
 
   useEffect(() => subscribeLang(() => { setLang(getLang()); force() }), [subscribeLang, getLang])
@@ -79,6 +82,18 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
     )
     return () => { current = false }
   }, [list, request])
+
+  // Close the picker on an outside click.
+  useEffect(() => {
+    if (pickerEntry === null) return
+    const onDocDown = (event: MouseEvent): void => {
+      if (pickerRef.current !== null && !pickerRef.current.contains(event.target as Node) && !(event.target as HTMLElement).closest('.dsh_pm_groupButton')) {
+        setPickerEntry(null)
+      }
+    }
+    document.addEventListener('mousedown', onDocDown)
+    return () => { document.removeEventListener('mousedown', onDocDown) }
+  }, [pickerEntry])
 
   const normalized = query.trim().toLocaleLowerCase()
   const filtered = useMemo(() => {
@@ -95,22 +110,32 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
     entry.packageName !== null ? describe(entry.packageName, lang) ?? entry.description ?? t('noDescription') : entry.description ?? t('noDescription')
 
   const retry = (): void => { setRequest(value => value + 1) }
-
   const refresh = (): void => { setRequest(value => value + 1) }
+
+  /** Apply `map` to every entry in the snapshot, preserving group buckets. */
+  const mapEntries = (map: (e: EntryInfo) => EntryInfo): void => {
+    setState(current => current.status === 'ready'
+      ? {
+          status: 'ready',
+          data: {
+            ...current.data,
+            official: current.data.official.map(map),
+            community: current.data.community.map(map),
+            customGroups: current.data.customGroups.map(g => ({ ...g, entries: g.entries.map(map) })),
+          },
+        }
+      : current)
+  }
 
   const onToggle = async (entry: EntryInfo): Promise<void> => {
     const target = !entry.enabled
     setBusy(current => ({ ...current, [entry.entryId]: true }))
     setNotice(null)
-    setState(current => current.status === 'ready'
-      ? { status: 'ready', data: mapEntry(current.data, entry.entryId, e => ({ ...e, enabled: target })) }
-      : current)
+    mapEntries(e => e.entryId === entry.entryId ? { ...e, enabled: target } : e)
     const result = await toggle({ entryId: entry.entryId, enabled: target })
     setBusy(current => ({ ...current, [entry.entryId]: false }))
     if (!result.ok) {
-      setState(current => current.status === 'ready'
-        ? { status: 'ready', data: mapEntry(current.data, entry.entryId, e => ({ ...e, enabled: !target })) }
-        : current)
+      mapEntries(e => e.entryId === entry.entryId ? { ...e, enabled: !target } : e)
       setNotice({ text: `${t('operationFailed')}${result.message}`, error: true })
     }
   }
@@ -130,28 +155,50 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
     setNotice({ text: t('uninstallDone'), error: false })
   }
 
-  const openPicker = (entry: EntryInfo): void => {
-    if (state.status !== 'ready') return
-    setPicker({ entry, groups: state.data.customGroups.map(g => g.name) })
-    setNewGroupName('')
+  const openPicker = async (entry: EntryInfo): Promise<void> => {
+    setPickerEntry(entry)
+    setPickNew('')
+    try {
+      setGroupNames(await groupList())
+    } catch {
+      setGroupNames(state.status === 'ready' ? state.data.customGroups.map(g => g.name) : [])
+    }
   }
 
-  const moveTo = async (groupName: string | null): Promise<void> => {
-    if (picker === null) return
-    const result = await group(picker.entry.moduleName, groupName)
+  const commitMove = async (groupName: string | null): Promise<void> => {
+    if (pickerEntry === null) return
+    const result = await group(pickerEntry.moduleName, groupName)
+    setPickerEntry(null)
     if (!result.ok) {
       setNotice({ text: `${t('operationFailed')}${result.message}`, error: true })
       return
     }
-    setPicker(null)
     refresh()
-    setNotice({ text: t('groupUpdated'), error: false })
   }
 
-  const createGroup = async (): Promise<void> => {
-    const name = newGroupName.trim()
+  const createFromPicker = async (): Promise<void> => {
+    const name = pickNew.trim()
     if (name === '') return
-    await moveTo(name)
+    const result = await groupCreate(name)
+    if (!result.ok) {
+      setNotice({ text: `${t('operationFailed')}${result.message}`, error: true })
+      return
+    }
+    setGroupNames(prev => [...prev.filter(n => n !== name), name].sort((a, b) => a.localeCompare(b)))
+    setPickNew('')
+  }
+
+  const createFromToolbar = async (): Promise<void> => {
+    const name = toolbarNew.trim()
+    if (name === '') return
+    const result = await groupCreate(name)
+    setToolbarNew('')
+    setShowNewGroupToolbar(false)
+    if (!result.ok) {
+      setNotice({ text: `${t('operationFailed')}${result.message}`, error: true })
+      return
+    }
+    refresh()
   }
 
   const onDeleteGroup = async (name: string): Promise<void> => {
@@ -167,6 +214,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
   const renderCard = (entry: EntryInfo): ReactNode => {
     const protectedModule = state.status === 'ready' && state.data.protectedModules.includes(entry.moduleName)
     const open = expandedId === entry.entryId
+    const isPickerTarget = pickerEntry?.entryId === entry.entryId
     const badges: ReactNode[] = []
     if (protectedModule) badges.push(<span key="p" data-kind="protected">{t('protected')}</span>)
     if (entry.patchState === 'disabled') badges.push(<span key="d" data-kind="patch">{t('patchDisabled')}</span>)
@@ -180,41 +228,73 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
         badges={badges}
         description={displayName(entry)}
         actions={(
-          <>
-            <span className="dsh_pm_statusDot" data-phase={phase} role="img" aria-label={phase} title={phase} />
-            <button
-              type="button"
-              className="dsh_pm_btn dsh_pm_btnPrimary"
-              disabled={protectedModule || busy[entry.entryId] === true}
-              onClick={() => { void onToggle(entry) }}
-            >
-              {entry.enabled ? t('disable') : t('enable')}
-            </button>
-            <button
-              type="button"
-              className="dsh_pm_btn"
-              onClick={() => { openPicker(entry) }}
-            >
-              {t('groupButton')}
-            </button>
-            {entry.group === 'community' && !entry.groupOverridden && entry.packageName !== null ? (
+          <div className="dsh_pm_actionsWrap">
+            <div className="dsh_pm_actions">
+              <span className="dsh_pm_statusDot" data-phase={phase} role="img" aria-label={phase} title={phase} />
               <button
                 type="button"
-                className="dsh_pm_btn dsh_pm_btnDanger"
+                className="dsh_pm_btn dsh_pm_btnPrimary"
                 disabled={protectedModule || busy[entry.entryId] === true}
-                onClick={() => { void onUninstall(entry) }}
+                onClick={() => { void onToggle(entry) }}
               >
-                {t('uninstall')}
+                {entry.enabled ? t('disable') : t('enable')}
               </button>
+              <button
+                type="button"
+                className="dsh_pm_btn dsh_pm_groupButton"
+                aria-haspopup="listbox"
+                aria-expanded={isPickerTarget}
+                onClick={() => { if (isPickerTarget) { setPickerEntry(null) } else { void openPicker(entry) } }}
+              >
+                {t('groupButton')}
+              </button>
+              {entry.group === 'community' && !entry.groupOverridden && entry.packageName !== null ? (
+                <button
+                  type="button"
+                  className="dsh_pm_btn dsh_pm_btnDanger"
+                  disabled={protectedModule || busy[entry.entryId] === true}
+                  onClick={() => { void onUninstall(entry) }}
+                >
+                  {t('uninstall')}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="dsh_pm_btn"
+                onClick={() => { setExpandedId(open ? null : entry.entryId) }}
+              >
+                {open ? t('collapse') : t('details')}
+              </button>
+            </div>
+            {isPickerTarget ? (
+              <div className="dsh_pm_popover" ref={pickerRef} role="listbox" aria-label={t('moveToGroup')}>
+                <div className="dsh_pm_popTitle">{t('moveToGroup')}</div>
+                {groupNames.length > 0 ? (
+                  <div className="dsh_pm_groupList">
+                    {groupNames.map(name => (
+                      <button key={name} type="button" role="option" className="dsh_pm_popItem" onClick={() => { void commitMove(name) }}>
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="dsh_pm_toolbar">
+                  <input
+                    className="dsh_pm_input"
+                    type="text"
+                    value={pickNew}
+                    placeholder={t('newGroupPlaceholder')}
+                    onChange={(event) => { setPickNew(event.currentTarget.value) }}
+                    onKeyDown={(event) => { if (event.key === 'Enter') void createFromPicker() }}
+                  />
+                  <button type="button" className="dsh_pm_btn dsh_pm_btnPrimary" onClick={() => { void createFromPicker() }}>{t('newGroup')}</button>
+                </div>
+                {pickerEntry.groupOverridden ? (
+                  <button type="button" className="dsh_pm_popItem dsh_pm_popReset" onClick={() => { void commitMove(null) }}>{t('restoreDefault')}</button>
+                ) : null}
+              </div>
             ) : null}
-            <button
-              type="button"
-              className="dsh_pm_btn"
-              onClick={() => { setExpandedId(open ? null : entry.entryId) }}
-            >
-              {open ? t('collapse') : t('details')}
-            </button>
-          </>
+          </div>
         )}
         details={open ? (
           <div className="dsh_pm_details">
@@ -272,6 +352,25 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
             onChange={(event) => { setQuery(event.currentTarget.value) }}
           />
         </label>
+        {showNewGroupToolbar ? (
+          <>
+            <input
+              className="dsh_pm_input dsh_pm_newGroupInput"
+              type="text"
+              value={toolbarNew}
+              placeholder={t('newGroupPlaceholder')}
+              autoFocus
+              onChange={(event) => { setToolbarNew(event.currentTarget.value) }}
+              onKeyDown={(event) => { if (event.key === 'Enter') void createFromToolbar(); if (event.key === 'Escape') setShowNewGroupToolbar(false) }}
+            />
+            <button type="button" className="dsh_pm_btn dsh_pm_btnPrimary" onClick={() => { void createFromToolbar() }}>{t('confirm')}</button>
+            <button type="button" className="dsh_pm_btn" onClick={() => { setShowNewGroupToolbar(false) }}>{t('cancel')}</button>
+          </>
+        ) : (
+          <button type="button" className="dsh_pm_btn dsh_pm_btnPrimary" onClick={() => { setShowNewGroupToolbar(true) }}>
+            + {t('newGroup')}
+          </button>
+        )}
         <button type="button" className="dsh_pm_btn" onClick={retry}>{t('retry')}</button>
       </div>
       <div className="dsh_pm_notice" data-error={notice?.error === true ? 'true' : undefined}>
@@ -291,50 +390,6 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
           {filtered.custom.map(g => renderGroup(g.name, g.entries, true))}
         </>
       ) : null}
-
-      {picker !== null ? (
-        <div className="dsh_pm_overlay" role="dialog" aria-label={t('moveToGroup')}>
-          <div className="dsh_pm_dialog">
-            <div className="dsh_pm_dialogTitle">{t('moveToGroup')}: {moduleShortName(picker.entry.moduleName)}</div>
-            {picker.groups.length > 0 ? (
-              <div className="dsh_pm_groupList">
-                {picker.groups.map(name => (
-                  <button key={name} type="button" className="dsh_pm_btn" onClick={() => { void moveTo(name) }}>
-                    {name}
-                  </button>
-                ))}
-              </div>
-            ) : <div className="dsh_pm_empty">{t('noDescription')}</div>}
-            <div className="dsh_pm_toolbar">
-              <input
-                className="dsh_pm_input"
-                type="text"
-                value={newGroupName}
-                placeholder={t('newGroupPlaceholder')}
-                onChange={(event) => { setNewGroupName(event.currentTarget.value) }}
-                onKeyDown={(event) => { if (event.key === 'Enter') void createGroup() }}
-              />
-              <button type="button" className="dsh_pm_btn dsh_pm_btnPrimary" onClick={() => { void createGroup() }}>{t('newGroup')}</button>
-            </div>
-            {picker.entry.groupOverridden ? (
-              <button type="button" className="dsh_pm_btn" onClick={() => { void moveTo(null) }}>{t('restoreDefault')}</button>
-            ) : null}
-            <div className="dsh_pm_toolbar">
-              <button type="button" className="dsh_pm_btn" onClick={() => { setPicker(null) }}>{t('cancel')}</button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
-}
-
-/** Apply `map` to every entry in a ListResponse, preserving group buckets. */
-function mapEntry(data: ListResponse, entryId: string, map: (e: EntryInfo) => EntryInfo): ListResponse {
-  return {
-    ...data,
-    official: data.official.map(e => e.entryId === entryId ? map(e) : e),
-    community: data.community.map(e => e.entryId === entryId ? map(e) : e),
-    customGroups: data.customGroups.map(g => ({ ...g, entries: g.entries.map(e => e.entryId === entryId ? map(e) : e) })),
-  }
 }

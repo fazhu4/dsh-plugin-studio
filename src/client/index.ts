@@ -64,6 +64,14 @@ export function apply(ctx: ClientContext): void {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ groupName }),
     }))
+  const groupCreate = async (groupName: string): Promise<GroupResponse | OpError> =>
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-manager/group-create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupName }),
+    }))
+  const groupList = async (): Promise<string[]> =>
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-manager/group-list'))
   const search = async (query: string): Promise<MarketItem[]> =>
     jsonOrThrow(await globalThis.fetch(`/dsh-plugin-manager/search?q=${encodeURIComponent(query)}`))
   const board = async (mode: 'top' | 'rising'): Promise<MarketItem[]> =>
@@ -88,6 +96,8 @@ export function apply(ctx: ClientContext): void {
         uninstall,
         group,
         groupDelete,
+        groupCreate,
+        groupList,
         getLang: lang,
         subscribeLang: (listener) => ctx.locale.subscribe(listener),
       }),

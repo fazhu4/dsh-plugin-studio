@@ -37,12 +37,16 @@ export const cssText = `
 .dsh_pm_groupRow { display: flex; align-items: center; gap: 8px; }
 .dsh_pm_groupRow .dsh_pm_groupHead { width: auto; flex: 1 1 auto; }
 .dsh_pm_groupDel { flex: 0 0 auto; }
-.dsh_pm_overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.dsh_pm_dialog { width: 320px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); }
-.dsh_pm_dialogTitle { color: var(--dsw-alias-label-primary); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
 .dsh_pm_groupList { display: flex; flex-direction: column; gap: 6px; }
 .dsh_pm_input { flex: 1; min-width: 0; padding: 5px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); font-size: 13px; }
 .dsh_pm_input:focus { outline: none; border-color: var(--dsw-alias-brand-primary); }
+.dsh_pm_actionsWrap { position: relative; }
+.dsh_pm_newGroupInput { flex: 0 1 160px; }
+.dsh_pm_popover { position: absolute; top: calc(100% + 6px); left: 0; z-index: 50; min-width: 200px; max-width: 260px; display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18); }
+.dsh_pm_popTitle { color: var(--dsw-alias-label-tertiary); font-size: 12px; }
+.dsh_pm_popItem { display: block; width: 100%; text-align: left; border: none; background: transparent; padding: 5px 8px; border-radius: 6px; font-size: 13px; line-height: 20px; color: var(--dsw-alias-label-primary); cursor: pointer; }
+.dsh_pm_popItem:hover { background: var(--dsw-alias-bg-layer-2); }
+.dsh_pm_popReset { color: var(--dsw-alias-state-danger-fg, var(--dsw-alias-label-primary)); }
 `
 
 /** Adopt the stylesheet once. */

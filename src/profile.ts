@@ -146,35 +146,54 @@ export async function reconcileBundles(profileDir: string): Promise<boolean> {
 /** Shape of the plugin-private group-override file. */
 export interface GroupStore {
   readonly version: 1
-  /** moduleName → custom group name. */
+  /** moduleName → custom group name (membership overrides). */
   readonly entries: Record<string, string>
+  /** Custom groups explicitly created but not yet holding any plugin. */
+  readonly declared: string[]
 }
 
-/** Read moduleName → groupName overrides; a missing/corrupt file yields empty. */
-export async function readGroups(file: string): Promise<Map<string, string>> {
-  const out = new Map<string, string>()
+/** The full parsed group state. */
+export interface GroupState {
+  readonly overrides: Map<string, string>
+  readonly declared: Set<string>
+}
+
+const EMPTY_STATE = (): GroupState => ({ overrides: new Map(), declared: new Set() })
+
+/** Read the group state; a missing/corrupt file yields empty. */
+export async function readGroups(file: string): Promise<GroupState> {
+  const state = EMPTY_STATE()
   let raw: string
   try {
     raw = await readFile(file, 'utf8')
   } catch {
-    return out
+    return state
   }
   try {
-    const parsed = JSON.parse(raw) as GroupStore
-    if (parsed === null || typeof parsed !== 'object' || parsed.version !== 1 || typeof parsed.entries !== 'object') {
-      return out
+    const parsed = JSON.parse(raw) as Partial<GroupStore>
+    if (parsed === null || typeof parsed !== 'object' || parsed.version !== 1) return state
+    if (typeof parsed.entries === 'object' && parsed.entries !== null) {
+      for (const [moduleName, groupName] of Object.entries(parsed.entries)) {
+        if (typeof groupName === 'string' && groupName !== '') state.overrides.set(moduleName, groupName)
+      }
     }
-    for (const [moduleName, groupName] of Object.entries(parsed.entries)) {
-      if (typeof groupName === 'string' && groupName !== '') out.set(moduleName, groupName)
+    if (Array.isArray(parsed.declared)) {
+      for (const name of parsed.declared) {
+        if (typeof name === 'string' && name !== '') state.declared.add(name)
+      }
     }
   } catch {
     // Corrupt JSON: start fresh rather than fail the listing.
   }
-  return out
+  return state
 }
 
-/** Persist moduleName → groupName overrides atomically. */
-export async function writeGroups(file: string, entries: ReadonlyMap<string, string>): Promise<void> {
-  const store: GroupStore = { version: 1, entries: Object.fromEntries(entries) }
+/** Persist the group state atomically. */
+export async function writeGroups(file: string, state: GroupState): Promise<void> {
+  const store: GroupStore = {
+    version: 1,
+    entries: Object.fromEntries(state.overrides),
+    declared: [...state.declared],
+  }
   await writeAtomic(file, `${JSON.stringify(store, null, 2)}\n`)
 }

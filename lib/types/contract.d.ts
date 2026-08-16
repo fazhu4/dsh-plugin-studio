@@ -93,3 +93,7 @@ export interface GroupDeleteRequest {
     /** Custom group name to delete (members fall back to auto-detection). */
     readonly groupName: string;
 }
+export interface GroupCreateRequest {
+    /** Name of the new custom group (empty-then-empty groups are declared). */
+    readonly groupName: string;
+}
