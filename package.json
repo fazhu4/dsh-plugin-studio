@@ -1,8 +1,20 @@
 {
-  "name": "dsh-plugin-manager",
+  "name": "dsh-plugin-studio",
   "description": "DSH plugin manager: official/community grouped plugin list with localized descriptions, one-click enable/disable and uninstall, plus a GitHub dsh-plugin market tab.",
   "version": "0.1.0",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "plugin-manager",
+    "plugin-management",
+    "web-ui",
+    "typescript",
+    "cordis"
+  ],
   "type": "module",
   "main": "lib/index.js",
   "exports": {

@@ -22,6 +22,9 @@ DSH（DeepSeek Harness）插件管理器：在 Web 设置页中**按官方/社�
 ## 安装
 
 ```bash
+# 从 npm 安装已发布包
+dsh plugin --profile web add dsh-plugin-studio@0.1.0
+
 # 从本仓库安装（推荐先构建）
 dsh plugin --profile web add file:/path/to/dsh-plugin-manager
 
@@ -30,6 +33,8 @@ dsh plugin --profile web add github:<your-name>/dsh-plugin-manager
 ```
 
 安装后**重启 dsh 服务**，刷新页面 → 设置 → 插件 → 「插件管理」与「插件市场」。
+
+npm 包名是 `dsh-plugin-studio`；运行时插件 ID 和 HTTP 路由仍使用 `dsh-plugin-manager`，这是 DSH 配置层中的内部标识。
 
 ## 要求
 
