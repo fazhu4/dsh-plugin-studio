@@ -39,3 +39,26 @@ export function classify(
   if (under(closureNodeModules, resolved)) return 'official'
   return moduleName.startsWith('@deepseek-ai/') ? 'official' : 'community'
 }
+
+export interface GroupOverride {
+  readonly name: string
+  readonly overridden: boolean
+}
+
+/**
+ * Resolve one entry's final group name: a user override wins over the
+ * auto-detected official/community group.
+ * @param moduleName - the entry's module specifier.
+ * @param autoGroup - the classified official/community group.
+ * @param overrides - moduleName → custom group name map.
+ */
+export function resolveGroupName(
+  moduleName: string,
+  autoGroup: PluginGroup,
+  overrides: ReadonlyMap<string, string>,
+): GroupOverride {
+  const name = overrides.get(moduleName)
+  return name === undefined || name === ''
+    ? { name: autoGroup, overridden: false }
+    : { name, overridden: true }
+}

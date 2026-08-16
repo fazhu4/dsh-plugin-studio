@@ -14,6 +14,8 @@ export interface ProfilePaths {
   readonly dir: string
   /** The user patch layer path. */
   readonly patchFile: string
+  /** User-defined group overrides (plugin-private, not a cordis file). */
+  readonly groupsFile: string
   /** Profile node_modules (user-installed plugins). */
   readonly nodeModules: string
   /** Installation closure node_modules (sibling of profiles/). */
@@ -26,6 +28,7 @@ export function profilePathsFromBaseUrl(baseUrl: string): ProfilePaths {
   return {
     dir,
     patchFile: join(dir, 'cordis.patch.yml'),
+    groupsFile: join(dir, 'dsh-plugin-manager-groups.json'),
     nodeModules: join(dir, 'node_modules'),
     closureNodeModules: join(dirname(dir), 'node_modules'),
   }
@@ -43,14 +46,25 @@ export interface PnpmResult {
   readonly output: string
 }
 
-/** Run pnpm in a directory, capturing combined output. */
+/**
+ * Run pnpm in a directory, capturing combined output. On Windows a `.cmd`
+ * shim is not directly spawnable, but `shell: true` would make Node
+ * concatenate args into a cmd string (DEP0190 security warning). Instead we
+ * invoke cmd.exe explicitly with /d /s /c and windowsVerbatimArguments — no
+ * shell option, no concatenation — and every arg reaching this point is
+ * whitelist-validated (see validate.ts) so the verbatim cmd line stays
+ * metacharacter-free.
+ */
 export function runPnpm(cwd: string, args: string[], timeoutMs = 300_000): Promise<PnpmResult> {
+  const isWin = process.platform === 'win32'
+  const file = isWin ? (process.env.ComSpec ?? 'cmd.exe') : 'pnpm'
+  const cmdArgs = isWin ? ['/d', '/s', '/c', 'pnpm', ...args] : args
   return new Promise((resolve) => {
-    execFile('pnpm', args, {
+    execFile(file, cmdArgs, {
       cwd,
-      shell: process.platform === 'win32',
       timeout: timeoutMs,
       maxBuffer: 8 * 1024 * 1024,
+      windowsVerbatimArguments: isWin,
     }, (error, stdout, stderr) => {
       const output = `${stdout}\n${stderr}`.trim()
       if (error === null) {
@@ -127,4 +141,40 @@ export async function reconcileBundles(profileDir: string): Promise<boolean> {
   }
   await writeManifest(profileDir, next)
   return true
+}
+
+/** Shape of the plugin-private group-override file. */
+export interface GroupStore {
+  readonly version: 1
+  /** moduleName → custom group name. */
+  readonly entries: Record<string, string>
+}
+
+/** Read moduleName → groupName overrides; a missing/corrupt file yields empty. */
+export async function readGroups(file: string): Promise<Map<string, string>> {
+  const out = new Map<string, string>()
+  let raw: string
+  try {
+    raw = await readFile(file, 'utf8')
+  } catch {
+    return out
+  }
+  try {
+    const parsed = JSON.parse(raw) as GroupStore
+    if (parsed === null || typeof parsed !== 'object' || parsed.version !== 1 || typeof parsed.entries !== 'object') {
+      return out
+    }
+    for (const [moduleName, groupName] of Object.entries(parsed.entries)) {
+      if (typeof groupName === 'string' && groupName !== '') out.set(moduleName, groupName)
+    }
+  } catch {
+    // Corrupt JSON: start fresh rather than fail the listing.
+  }
+  return out
+}
+
+/** Persist moduleName → groupName overrides atomically. */
+export async function writeGroups(file: string, entries: ReadonlyMap<string, string>): Promise<void> {
+  const store: GroupStore = { version: 1, entries: Object.fromEntries(entries) }
+  await writeAtomic(file, `${JSON.stringify(store, null, 2)}\n`)
 }

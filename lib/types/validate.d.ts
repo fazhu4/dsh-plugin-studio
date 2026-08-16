@@ -14,3 +14,8 @@ export declare function isValidInstallSpec(spec: string): boolean;
 export declare function isValidPackageName(name: string): boolean;
 /** Whether a loader entry id is safe to write into the patch file. */
 export declare function isValidEntryId(id: string): boolean;
+/**
+ * Whether a custom group name is safe: non-empty, ≤ 50 chars, no control/newline
+ * characters (the rest is user freedom — CJK, spaces, emoji allowed).
+ */
+export declare function isValidGroupName(name: string): boolean;

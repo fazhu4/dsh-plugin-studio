@@ -21,7 +21,10 @@ export interface EntryInfo {
   readonly packageName: string | null
   readonly enabled: boolean
   readonly fiberPhase: PluginFiberPhase
-  readonly group: PluginGroup
+  /** Final group name: 'official' | 'community' | a user-defined custom name. */
+  readonly group: string
+  /** Whether the group name came from a user override rather than auto-detection. */
+  readonly groupOverridden: boolean
   readonly patchState: PatchState
   /** Raw package.json description (English for in-box packages). */
   readonly description: string | null
@@ -33,9 +36,16 @@ export interface EntryInfo {
   readonly readmeSummary: string | null
 }
 
+/** One user-defined custom group with its member entries. */
+export interface CustomGroup {
+  readonly name: string
+  readonly entries: readonly EntryInfo[]
+}
+
 export interface ListResponse {
   readonly official: readonly EntryInfo[]
   readonly community: readonly EntryInfo[]
+  readonly customGroups: readonly CustomGroup[]
   readonly protectedModules: readonly string[]
   readonly restartRequired: boolean
 }
@@ -84,4 +94,20 @@ export interface UninstallRequest {
 export interface UninstallResponse {
   readonly ok: true
   readonly restartRequired: true
+}
+
+export interface GroupRequest {
+  /** The plugin's module name to re-assign. */
+  readonly moduleName: string
+  /** Target custom group name, or null to clear the override (back to auto). */
+  readonly groupName: string | null
+}
+
+export interface GroupResponse {
+  readonly ok: true
+}
+
+export interface GroupDeleteRequest {
+  /** Custom group name to delete (members fall back to auto-detection). */
+  readonly groupName: string
 }

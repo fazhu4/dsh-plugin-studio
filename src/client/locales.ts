@@ -54,6 +54,16 @@ export interface PluginManagerLocaleKeyMap {
   entryId: string
   operationFailed: string
   uninstallDone: string
+  groupButton: string
+  moveToGroup: string
+  newGroup: string
+  newGroupPlaceholder: string
+  restoreDefault: string
+  deleteGroup: string
+  deleteGroupConfirm: string
+  groupUpdated: string
+  cancel: string
+  confirm: string
 }
 
 /** Simplified Chinese dictionary and key source of truth. */
@@ -103,6 +113,16 @@ export const zh = {
   entryId: '条目 id',
   operationFailed: '操作失败：',
   uninstallDone: '已卸载，重启 dsh 服务后彻底移除。',
+  groupButton: '分组',
+  moveToGroup: '移动到分组',
+  newGroup: '新建分组',
+  newGroupPlaceholder: '输入分组名',
+  restoreDefault: '恢复默认分组',
+  deleteGroup: '删除分组',
+  deleteGroupConfirm: '删除该分组？其中插件将回到默认分组（官方/社区）。',
+  groupUpdated: '分组已更新',
+  cancel: '取消',
+  confirm: '确定',
 } satisfies Record<string, string>
 
 /** Plugin manager locale key union. */
@@ -155,4 +175,14 @@ export const en: Record<PluginManagerLocaleKey, string> = {
   entryId: 'Entry id',
   operationFailed: 'Operation failed: ',
   uninstallDone: 'Uninstalled. Fully removed after restarting the dsh service.',
+  groupButton: 'Group',
+  moveToGroup: 'Move to group',
+  newGroup: 'New group',
+  newGroupPlaceholder: 'Group name',
+  restoreDefault: 'Restore default group',
+  deleteGroup: 'Delete group',
+  deleteGroupConfirm: 'Delete this group? Its plugins return to their default group (official/community).',
+  groupUpdated: 'Group updated',
+  cancel: 'Cancel',
+  confirm: 'OK',
 }

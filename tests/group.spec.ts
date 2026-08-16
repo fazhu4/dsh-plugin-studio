@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classify } from '../src/group.ts'
+import { classify, resolveGroupName } from '../src/group.ts'
 
 const PROFILE_NM = 'C:/Users/u/.dsh/profiles/web/node_modules'
 const CLOSURE_NM = 'C:/Users/u/.dsh/profiles/node_modules'
@@ -39,5 +39,19 @@ describe('classify', () => {
   it('does not false-positive on a prefix sibling directory', () => {
     const resolve = () => `${PROFILE_NM}x/foo/package.json`
     expect(classify('foo', resolve, PROFILE_NM, CLOSURE_NM)).toBe('community')
+  })
+})
+
+describe('resolveGroupName', () => {
+  const overrides = new Map<string, string>([['dsh-ding', '我的工具']])
+
+  it('returns the auto group when not overridden', () => {
+    expect(resolveGroupName('dsh-activity-report', 'community', overrides)).toEqual({ name: 'community', overridden: false })
+  })
+  it('returns the custom name when overridden', () => {
+    expect(resolveGroupName('dsh-ding', 'community', overrides)).toEqual({ name: '我的工具', overridden: true })
+  })
+  it('treats an empty override as no override', () => {
+    expect(resolveGroupName('x', 'official', new Map([['x', '']]))).toEqual({ name: 'official', overridden: false })
   })
 })

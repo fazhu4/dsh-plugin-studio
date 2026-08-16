@@ -14,3 +14,15 @@ export type PackageResolver = (spec: string) => string;
  * @param closureNodeModules - absolute path of the installation closure node_modules.
  */
 export declare function classify(moduleName: string, resolve: PackageResolver, profileNodeModules: string, closureNodeModules: string): PluginGroup;
+export interface GroupOverride {
+    readonly name: string;
+    readonly overridden: boolean;
+}
+/**
+ * Resolve one entry's final group name: a user override wins over the
+ * auto-detected official/community group.
+ * @param moduleName - the entry's module specifier.
+ * @param autoGroup - the classified official/community group.
+ * @param overrides - moduleName → custom group name map.
+ */
+export declare function resolveGroupName(moduleName: string, autoGroup: PluginGroup, overrides: ReadonlyMap<string, string>): GroupOverride;

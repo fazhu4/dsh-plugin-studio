@@ -34,6 +34,15 @@ export const cssText = `
 .dsh_pm_details code { color: var(--dsw-alias-label-primary); overflow-wrap: anywhere; }
 .dsh_pm_status { padding: 24px 0; text-align: center; color: var(--dsw-alias-label-tertiary); font-size: 13px; }
 .dsh_pm_empty { padding: 24px 0; text-align: center; color: var(--dsw-alias-label-tertiary); font-size: 13px; }
+.dsh_pm_groupRow { display: flex; align-items: center; gap: 8px; }
+.dsh_pm_groupRow .dsh_pm_groupHead { width: auto; flex: 1 1 auto; }
+.dsh_pm_groupDel { flex: 0 0 auto; }
+.dsh_pm_overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.dsh_pm_dialog { width: 320px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); }
+.dsh_pm_dialogTitle { color: var(--dsw-alias-label-primary); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.dsh_pm_groupList { display: flex; flex-direction: column; gap: 6px; }
+.dsh_pm_input { flex: 1; min-width: 0; padding: 5px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); font-size: 13px; }
+.dsh_pm_input:focus { outline: none; border-color: var(--dsw-alias-brand-primary); }
 `
 
 /** Adopt the stylesheet once. */

@@ -15,23 +15,25 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
-import { classify } from './group.ts'
+import { classify, resolveGroupName } from './group.ts'
 import { extractMeta, readmeSummary, type PackageMeta } from './meta.ts'
 import { patchStateOf, upsertDisabled } from './patch.ts'
 import { parseRepoManifest, parseSearchResponse, type GitHubRepo } from './market.ts'
 import { mergeProtectedModules } from './protected.ts'
-import { isValidEntryId, isValidInstallSpec, isValidPackageName } from './validate.ts'
+import { isValidEntryId, isValidGroupName, isValidInstallSpec, isValidPackageName } from './validate.ts'
 import {
   packageIsBundle,
   profilePathsFromBaseUrl,
+  readGroups,
   readManifest,
   reconcileBundles,
   runPnpm,
   writeAtomic,
+  writeGroups,
   type ProfilePaths,
 } from './profile.ts'
 import type {
-  EntryInfo, InstallRequest, InstallResponse, ListResponse, MarketItem,
+  EntryInfo, GroupDeleteRequest, GroupRequest, GroupResponse, InstallRequest, InstallResponse, ListResponse, MarketItem,
   OpError, ToggleRequest, ToggleResponse, UninstallRequest, UninstallResponse,
 } from './contract.ts'
 
@@ -153,11 +155,13 @@ async function buildList(ctx: Ctx, paths: ProfilePaths): Promise<ListResponse> {
   } catch {
     // No patch file yet — everything is in its default state.
   }
+  const overrides = await readGroups(paths.groupsFile)
   const entries: EntryInfo[] = []
   for (const entry of ctx.loader.entries()) {
     if (entry.options.group) continue
     const moduleName = entry.options.name
-    const group = classify(moduleName, spec => require.resolve(spec), paths.nodeModules, paths.closureNodeModules)
+    const autoGroup = classify(moduleName, spec => require.resolve(spec), paths.nodeModules, paths.closureNodeModules)
+    const resolved = resolveGroupName(moduleName, autoGroup, overrides)
     let meta: PackageMeta = {
       name: null, version: null, description: null,
       homepage: null, repository: null, license: null,
@@ -180,7 +184,8 @@ async function buildList(ctx: Ctx, paths: ProfilePaths): Promise<ListResponse> {
       packageName: meta.name,
       enabled: !entry.disabled,
       fiberPhase: entry.fiber === undefined ? null : FIBER_PHASE[entry.fiber.state] ?? null,
-      group,
+      group: resolved.name,
+      groupOverridden: resolved.overridden,
       // The user patch layer addresses rows by their bare id (EntryOptions.id),
       // NOT the loader-tree path (e.g. `include:llm`): a path-prefixed row is
       // silently skipped by the include plugin's id lookup.
@@ -193,9 +198,21 @@ async function buildList(ctx: Ctx, paths: ProfilePaths): Promise<ListResponse> {
       readmeSummary: readme === null ? null : readmeSummary(readme),
     })
   }
+  // Bucket custom groups by name (name-ordered), entries keep loader order.
+  const customMap = new Map<string, EntryInfo[]>()
+  for (const entry of entries) {
+    if (entry.group === 'official' || entry.group === 'community') continue
+    const list = customMap.get(entry.group) ?? []
+    list.push(entry)
+    customMap.set(entry.group, list)
+  }
+  const customGroups = [...customMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([name, members]) => ({ name, entries: members }))
   return {
     official: entries.filter(entry => entry.group === 'official'),
     community: entries.filter(entry => entry.group === 'community'),
+    customGroups,
     protectedModules: [...protectedSet],
     restartRequired: pendingRestart,
   }
@@ -461,6 +478,69 @@ export function apply(ctx: Ctx, config: Config = {}): void {
         json(res, 200, await uninstallPackage(paths, body.packageName))
       } catch (error) {
         fail(res, `uninstall failed: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    },
+  }))
+
+  disposers.push(ctx.webServer.register({
+    kind: 'exact',
+    path: '/dsh-plugin-manager/group',
+    handler: async (req, res) => {
+      if (!isLoopback(req)) { fail(res, 'loopback only'); return }
+      try {
+        const body = await readJsonBody(req) as Partial<GroupRequest>
+        if (typeof body.moduleName !== 'string' || !isValidInstallSpec(body.moduleName)) {
+          fail(res, 'invalid body: { moduleName: string, groupName: string | null }')
+          return
+        }
+        const moduleName = body.moduleName
+        const groupName = body.groupName
+        if (groupName !== null && groupName !== undefined && (typeof groupName !== 'string' || !isValidGroupName(groupName))) {
+          fail(res, 'invalid group name')
+          return
+        }
+        await withLock(async () => {
+          const overrides = await readGroups(paths.groupsFile)
+          if (groupName === null || groupName === undefined) {
+            overrides.delete(moduleName)
+          } else {
+            overrides.set(moduleName, groupName)
+          }
+          await writeGroups(paths.groupsFile, overrides)
+        })
+        json(res, 200, { ok: true } satisfies GroupResponse)
+      } catch (error) {
+        fail(res, `group failed: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    },
+  }))
+
+  disposers.push(ctx.webServer.register({
+    kind: 'exact',
+    path: '/dsh-plugin-manager/group-delete',
+    handler: async (req, res) => {
+      if (!isLoopback(req)) { fail(res, 'loopback only'); return }
+      try {
+        const body = await readJsonBody(req) as Partial<GroupDeleteRequest>
+        if (typeof body.groupName !== 'string' || !isValidGroupName(body.groupName)) {
+          fail(res, 'invalid body: { groupName: string }')
+          return
+        }
+        const groupName = body.groupName
+        await withLock(async () => {
+          const overrides = await readGroups(paths.groupsFile)
+          let changed = false
+          for (const [moduleName, name] of [...overrides]) {
+            if (name === groupName) {
+              overrides.delete(moduleName)
+              changed = true
+            }
+          }
+          if (changed) await writeGroups(paths.groupsFile, overrides)
+        })
+        json(res, 200, { ok: true } satisfies GroupResponse)
+      } catch (error) {
+        fail(res, `group-delete failed: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
   }))

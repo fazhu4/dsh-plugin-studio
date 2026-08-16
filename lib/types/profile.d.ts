@@ -8,6 +8,8 @@ export interface ProfilePaths {
     readonly dir: string;
     /** The user patch layer path. */
     readonly patchFile: string;
+    /** User-defined group overrides (plugin-private, not a cordis file). */
+    readonly groupsFile: string;
     /** Profile node_modules (user-installed plugins). */
     readonly nodeModules: string;
     /** Installation closure node_modules (sibling of profiles/). */
@@ -21,7 +23,15 @@ export interface PnpmResult {
     readonly code: number;
     readonly output: string;
 }
-/** Run pnpm in a directory, capturing combined output. */
+/**
+ * Run pnpm in a directory, capturing combined output. On Windows a `.cmd`
+ * shim is not directly spawnable, but `shell: true` would make Node
+ * concatenate args into a cmd string (DEP0190 security warning). Instead we
+ * invoke cmd.exe explicitly with /d /s /c and windowsVerbatimArguments — no
+ * shell option, no concatenation — and every arg reaching this point is
+ * whitelist-validated (see validate.ts) so the verbatim cmd line stays
+ * metacharacter-free.
+ */
 export declare function runPnpm(cwd: string, args: string[], timeoutMs?: number): Promise<PnpmResult>;
 export interface ProfileManifest {
     readonly dependencies?: Record<string, string>;
@@ -44,3 +54,13 @@ export declare function packageIsBundle(packageName: string, profileDir: string)
  * @returns whether the manifest changed.
  */
 export declare function reconcileBundles(profileDir: string): Promise<boolean>;
+/** Shape of the plugin-private group-override file. */
+export interface GroupStore {
+    readonly version: 1;
+    /** moduleName → custom group name. */
+    readonly entries: Record<string, string>;
+}
+/** Read moduleName → groupName overrides; a missing/corrupt file yields empty. */
+export declare function readGroups(file: string): Promise<Map<string, string>>;
+/** Persist moduleName → groupName overrides atomically. */
+export declare function writeGroups(file: string, entries: ReadonlyMap<string, string>): Promise<void>;

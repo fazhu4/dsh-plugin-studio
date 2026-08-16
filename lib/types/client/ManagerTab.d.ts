@@ -1,11 +1,11 @@
 /**
  * Plugin manager tab: official/community grouped inventory with localized
  * descriptions, enable/disable toggles (user patch layer + HMR), details,
- * and community-only uninstall.
+ * community-only uninstall, and user custom groups (move/delete).
  */
 import { type ReactNode } from 'react';
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots';
-import type { ListResponse, OpError, ToggleResponse, UninstallResponse } from '../contract.ts';
+import type { GroupResponse, ListResponse, OpError, ToggleResponse, UninstallResponse } from '../contract.ts';
 /** Registration-side business face for the manager tab. */
 export interface ManagerTabInjected {
     list: () => Promise<ListResponse>;
@@ -14,6 +14,8 @@ export interface ManagerTabInjected {
         enabled: boolean;
     }) => Promise<ToggleResponse | OpError>;
     uninstall: (packageName: string) => Promise<UninstallResponse | OpError>;
+    group: (moduleName: string, groupName: string | null) => Promise<GroupResponse | OpError>;
+    groupDelete: (groupName: string) => Promise<GroupResponse | OpError>;
     getLang: () => 'zh' | 'en';
     subscribeLang: (listener: () => void) => () => void;
 }

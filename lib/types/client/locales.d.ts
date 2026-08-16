@@ -51,6 +51,16 @@ export interface PluginManagerLocaleKeyMap {
     entryId: string;
     operationFailed: string;
     uninstallDone: string;
+    groupButton: string;
+    moveToGroup: string;
+    newGroup: string;
+    newGroupPlaceholder: string;
+    restoreDefault: string;
+    deleteGroup: string;
+    deleteGroupConfirm: string;
+    groupUpdated: string;
+    cancel: string;
+    confirm: string;
 }
 /** Simplified Chinese dictionary and key source of truth. */
 export declare const zh: {
@@ -99,6 +109,16 @@ export declare const zh: {
     entryId: string;
     operationFailed: string;
     uninstallDone: string;
+    groupButton: string;
+    moveToGroup: string;
+    newGroup: string;
+    newGroupPlaceholder: string;
+    restoreDefault: string;
+    deleteGroup: string;
+    deleteGroupConfirm: string;
+    groupUpdated: string;
+    cancel: string;
+    confirm: string;
 };
 /** Plugin manager locale key union. */
 export type PluginManagerLocaleKey = keyof typeof zh;

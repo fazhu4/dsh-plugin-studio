@@ -9,7 +9,7 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: the settings.section SlotMap entry.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import type {
-  InstallResponse, ListResponse, MarketItem, OpError, ToggleResponse, UninstallResponse,
+  GroupResponse, InstallResponse, ListResponse, MarketItem, OpError, ToggleResponse, UninstallResponse,
 } from '../contract.ts'
 import { ManagerTab, type ManagerTabInjected } from './ManagerTab.tsx'
 import { MarketTab, type MarketTabInjected } from './MarketTab.tsx'
@@ -52,6 +52,18 @@ export function apply(ctx: ClientContext): void {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ packageName }),
     }))
+  const group = async (moduleName: string, groupName: string | null): Promise<GroupResponse | OpError> =>
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-manager/group', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ moduleName, groupName }),
+    }))
+  const groupDelete = async (groupName: string): Promise<GroupResponse | OpError> =>
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-manager/group-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupName }),
+    }))
   const search = async (query: string): Promise<MarketItem[]> =>
     jsonOrThrow(await globalThis.fetch(`/dsh-plugin-manager/search?q=${encodeURIComponent(query)}`))
   const board = async (mode: 'top' | 'rising'): Promise<MarketItem[]> =>
@@ -74,6 +86,8 @@ export function apply(ctx: ClientContext): void {
         list,
         toggle,
         uninstall,
+        group,
+        groupDelete,
         getLang: lang,
         subscribeLang: (listener) => ctx.locale.subscribe(listener),
       }),

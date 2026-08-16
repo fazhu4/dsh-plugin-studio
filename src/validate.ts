@@ -25,3 +25,16 @@ export function isValidPackageName(name: string): boolean {
 export function isValidEntryId(id: string): boolean {
   return ENTRY_ID_RE.test(id)
 }
+
+/**
+ * Whether a custom group name is safe: non-empty, ≤ 50 chars, no control/newline
+ * characters (the rest is user freedom — CJK, spaces, emoji allowed).
+ */
+export function isValidGroupName(name: string): boolean {
+  if (name.length === 0 || name.length > 50) return false
+  for (const ch of name) {
+    const code = ch.codePointAt(0)!
+    if (code < 0x20 || code === 0x7f) return false
+  }
+  return true
+}
