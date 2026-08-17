@@ -10,6 +10,8 @@ import type { PluginGroup } from './contract.ts'
 /** Resolve a module specifier to an absolute path; throws when unresolvable. */
 export type PackageResolver = (spec: string) => string
 
+const OFFICIAL_INTERNAL_ENTRIES = new Set(['cordis:include'])
+
 function under(root: string, path: string): boolean {
   const r = root.toLowerCase()
   const p = path.toLowerCase()
@@ -29,6 +31,8 @@ export function classify(
   profileNodeModules: string,
   closureNodeModules: string,
 ): PluginGroup {
+  if (OFFICIAL_INTERNAL_ENTRIES.has(moduleName)) return 'official'
+
   let resolved: string
   try {
     resolved = resolve(`${moduleName}/package.json`)

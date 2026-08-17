@@ -7,12 +7,12 @@
 
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { describe } from '../descriptions.ts'
 import type {
   EntryInfo, GroupResponse, ListResponse, OpError, ToggleResponse, UninstallResponse,
 } from '../contract.ts'
 import type { PluginManagerLocaleKey } from './locales.ts'
 import { CardShell } from './Card.tsx'
+import { entryDescription } from './entry-display.ts'
 
 /** Registration-side business face for the manager tab. */
 export interface ManagerTabInjected {
@@ -106,8 +106,7 @@ export function ManagerTab(props: ManagerTabProps): ReactNode {
     }
   }, [normalized, state])
 
-  const displayName = (entry: EntryInfo): string =>
-    entry.packageName !== null ? describe(entry.packageName, lang) ?? entry.description ?? t('noDescription') : entry.description ?? t('noDescription')
+  const displayName = (entry: EntryInfo): string => entryDescription(entry, lang, t('noDescription'))
 
   const retry = (): void => { setRequest(value => value + 1) }
   const refresh = (): void => { setRequest(value => value + 1) }

@@ -25,6 +25,11 @@ describe('classify', () => {
     expect(classify('@deepseek-ai/dsh-llm', resolve, PROFILE_NM, CLOSURE_NM)).toBe('official')
   })
 
+  it('classifies the internal include entry as official', () => {
+    const resolve = () => { throw new Error('synthetic entry has no package metadata') }
+    expect(classify('cordis:include', resolve, PROFILE_NM, CLOSURE_NM)).toBe('official')
+  })
+
   it('falls back to scope for unresolved specs', () => {
     const resolve = () => { throw new Error('nope') }
     expect(classify('@deepseek-ai/dsh-agent', resolve, PROFILE_NM, CLOSURE_NM)).toBe('official')

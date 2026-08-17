@@ -519,6 +519,10 @@ export const DESCRIPTIONS: Readonly<Record<string, LocalizedDescription>> = {
     zh: '配置热重载：补丁文件变更自动重组组合树。',
     en: 'Config hot-reload: recomposes the composition tree on patch-file changes.',
   },
+  'cordis:include': {
+    zh: 'dsh 内置配置加载器：读取 YAML/JSON 配置，组合插件与 patch，并支持热重载。',
+    en: 'Built-in dsh config loader: reads YAML/JSON, composes plugins and patches, and supports hot reload.',
+  },
   '@deepseek-ai/dsh-pwsh-sandbox': {
     zh: 'PowerShell 执行器沙箱实现：每条命令经 ctx.sandbox 约束并回报结果。',
     en: 'Sandbox-consuming implementation of the DeepSeek Harness PowerShell executor seam (confines every command via ctx.sandbox, reports denial/enforcement result facts)',

@@ -8,6 +8,10 @@ describe('describe', () => {
   it('returns the en entry for en', () => {
     expect(describePlugin('dsh-ding', 'en')).toContain('chime')
   })
+  it('returns summaries for the internal include entry', () => {
+    expect(describePlugin('cordis:include', 'zh')).toContain('配置加载器')
+    expect(describePlugin('cordis:include', 'en')).toContain('config loader')
+  })
   it('returns null for unknown packages', () => {
     expect(describePlugin('no-such-package', 'zh')).toBeNull()
   })
