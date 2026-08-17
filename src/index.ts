@@ -306,7 +306,7 @@ async function installPackage(paths: ProfilePaths, spec: string): Promise<Instal
     const hint = /allowBuilds|Ignored build scripts/i.test(result.output) ? ` ${ALLOW_BUILDS_HINT}` : ''
     return { ok: false, message: `pnpm add 失败（退出码 ${result.code}）${hint}\n${result.output.slice(-800)}` }
   }
-  await withLock(() => reconcileBundles(paths.dir))
+  await withLock(() => reconcileBundles(paths.dir, paths.closureNodeModules))
   const after = await readManifest(paths.dir)
   const newDeps = Object.keys(after.dependencies ?? {}).filter(name => !beforeDeps.has(name))
   const installed = newDeps.length > 0 ? newDeps[0] : undefined
@@ -342,7 +342,7 @@ async function uninstallPackage(paths: ProfilePaths, packageName: string): Promi
   if (result.code !== 0) {
     return { ok: false, message: `pnpm remove 失败（退出码 ${result.code}）\n${result.output.slice(-800)}` }
   }
-  await withLock(() => reconcileBundles(paths.dir))
+  await withLock(() => reconcileBundles(paths.dir, paths.closureNodeModules))
   pendingUninstalls.add(packageName)
   pendingRestart = true
   return { ok: true, restartRequired: true }

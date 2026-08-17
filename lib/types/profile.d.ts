@@ -45,7 +45,7 @@ export interface ProfileManifest {
 export declare function readManifest(profileDir: string): Promise<ProfileManifest>;
 /** Write the profile manifest atomically. */
 export declare function writeManifest(profileDir: string, manifest: ProfileManifest): Promise<void>;
-/** Whether an installed package declares a dsh.bundle patch layer. */
+/** Whether a profile-installed package declares a dsh.bundle patch layer. */
 export declare function packageIsBundle(packageName: string, profileDir: string): Promise<boolean>;
 /**
  * Reconcile `dsh.profile.bundles` against installed dependencies: a
@@ -53,7 +53,7 @@ export declare function packageIsBundle(packageName: string, profileDir: string)
  * no longer is a bundle (or dependency) leaves it. Persists when changed.
  * @returns whether the manifest changed.
  */
-export declare function reconcileBundles(profileDir: string): Promise<boolean>;
+export declare function reconcileBundles(profileDir: string, closureNodeModules?: string): Promise<boolean>;
 /** Shape of the plugin-private group-override file. */
 export interface GroupStore {
     readonly version: 1;

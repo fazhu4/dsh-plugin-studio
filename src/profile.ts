@@ -99,15 +99,20 @@ export async function writeManifest(profileDir: string, manifest: ProfileManifes
 }
 
 /** Whether an installed package declares a dsh.bundle patch layer. */
-export async function packageIsBundle(packageName: string, profileDir: string): Promise<boolean> {
+async function packageIsBundleAt(packageName: string, nodeModules: string): Promise<boolean> {
   try {
     const pkg = JSON.parse(
-      await readFile(join(profileDir, 'node_modules', packageName, 'package.json'), 'utf8'),
+      await readFile(join(nodeModules, packageName, 'package.json'), 'utf8'),
     ) as { dsh?: { bundle?: unknown } }
     return typeof pkg.dsh?.bundle === 'object' && pkg.dsh.bundle !== null
   } catch {
     return false
   }
+}
+
+/** Whether a profile-installed package declares a dsh.bundle patch layer. */
+export async function packageIsBundle(packageName: string, profileDir: string): Promise<boolean> {
+  return packageIsBundleAt(packageName, join(profileDir, 'node_modules'))
 }
 
 /**
@@ -116,7 +121,10 @@ export async function packageIsBundle(packageName: string, profileDir: string): 
  * no longer is a bundle (or dependency) leaves it. Persists when changed.
  * @returns whether the manifest changed.
  */
-export async function reconcileBundles(profileDir: string): Promise<boolean> {
+export async function reconcileBundles(
+  profileDir: string,
+  closureNodeModules = join(dirname(profileDir), 'node_modules'),
+): Promise<boolean> {
   const manifest = await readManifest(profileDir)
   const deps = Object.keys(manifest.dependencies ?? {})
   const bundles = [...(manifest.dsh?.profile?.bundles ?? [])]
@@ -128,7 +136,10 @@ export async function reconcileBundles(profileDir: string): Promise<boolean> {
     }
   }
   for (const name of [...bundles]) {
-    if (deps.includes(name) && !await packageIsBundle(name, profileDir)) {
+    const profileDependency = deps.includes(name)
+    const profileBundle = await packageIsBundleAt(name, join(profileDir, 'node_modules'))
+    const closureBundle = await packageIsBundleAt(name, closureNodeModules)
+    if ((profileDependency && !profileBundle) || (!profileDependency && !closureBundle)) {
       const at = bundles.indexOf(name)
       bundles.splice(at, 1)
       changed = true
