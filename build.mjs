@@ -1,5 +1,5 @@
 /**
- * dsh-usage-insights build: esbuild bundles for host (Node) and client (browser).
+ * dsh-plugin-studio build: esbuild bundles for host (Node) and client (browser).
  * Produces lib/index.js (host plugin) and lib/client.js (client bundle), plus
  * .d.ts declarations for the public entry points.
  */
@@ -47,7 +47,7 @@ await build({
     '@deepseek-ai/dsh-client-locale',
   ],
   banner: {
-    js: 'window.__ModuleLoader__.load({ id: "dsh-usage-insights", factory: (require) => {\n'
+    js: 'window.__ModuleLoader__.load({ id: "dsh-plugin-studio", factory: (require) => {\n'
       + 'var module = { exports: {} }; var exports = module.exports;',
   },
   footer: {
@@ -69,14 +69,14 @@ try {
     stdio: 'ignore',
   })
 } catch {
-  console.error('[dsh-usage-insights] error: type declaration emission failed (exports.types will be missing)')
+  console.error('[dsh-plugin-studio] error: type declaration emission failed (exports.types will be missing)')
   process.exitCode = 1
 }
 
 // Manifest marker so the profile loader can sanity-check the bundle.
 writeFileSync(
   join(root, 'lib/manifest.json'),
-  JSON.stringify({ name: 'dsh-usage-insights', host: 'lib/index.js', client: 'lib/client.js' }, null, 2),
+  JSON.stringify({ name: 'dsh-plugin-studio', host: 'lib/index.js', client: 'lib/client.js' }, null, 2),
 )
 
-console.log('[dsh-usage-insights] build complete')
+console.log('[dsh-plugin-studio] build complete')

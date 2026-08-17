@@ -52,9 +52,9 @@ export const cssText = `
 /** Adopt the stylesheet once. */
 export function adoptStyles(): void {
   if (typeof document === 'undefined') return
-  if (document.getElementById('dsh-usage-insights-styles')) return
+  if (document.getElementById('dsh-plugin-studio-styles')) return
   const style = document.createElement('style')
-  style.id = 'dsh-usage-insights-styles'
+  style.id = 'dsh-plugin-studio-styles'
   style.textContent = cssText
   document.head.appendChild(style)
 }

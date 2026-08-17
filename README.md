@@ -1,4 +1,4 @@
-# dsh-usage-insights
+# dsh-plugin-studio
 
 DSH（DeepSeek Harness）插件管理器：在 Web 设置页中**按官方/社区分组**管理已安装插件（中文描述、一键启停、详情、卸载），并内置 **GitHub 插件市场**（高收藏/增长最快榜单 + 搜索 + 一键安装）。
 
@@ -23,20 +23,20 @@ DSH（DeepSeek Harness）插件管理器：在 Web 设置页中**按官方/社�
 
 ```bash
 # 从 npm 安装已发布包
-dsh plugin --profile web add dsh-usage-insights@0.3.0
+dsh plugin --profile web add dsh-plugin-studio@0.3.0
 
 # 从本仓库安装（推荐先构建）
-dsh plugin --profile web add file:/path/to/dsh-usage-insights
+dsh plugin --profile web add file:/path/to/dsh-plugin-studio
 
 # 或从 GitHub 安装
-dsh plugin --profile web add github:<your-name>/dsh-usage-insights
+dsh plugin --profile web add github:<your-name>/dsh-plugin-studio
 ```
 
 安装后**重启 dsh 服务**，刷新页面 → 设置 → 插件 → 「插件管理」与「插件市场」。
 
 社区插件卸载成功后会立即从当前列表隐藏；重启 dsh 服务后完成运行时移除。
 
-包名、运行时插件 ID、HTTP 路由和本地分组存储文件统一使用 `dsh-usage-insights`。
+包名、运行时插件 ID、HTTP 路由和本地分组存储文件统一使用 `dsh-plugin-studio`。
 
 ## 要求
 
@@ -51,7 +51,7 @@ pnpm run check        # typecheck + 单测 + 构建
 pnpm run build        # 仅构建（lib/index.js 宿主 + lib/client.js 客户端）
 ```
 
-- 宿主插件：环回 HTTP 路由 `/dsh-usage-insights/{list,toggle,search,install,uninstall}`（loopback-only）
+- 宿主插件：环回 HTTP 路由 `/dsh-plugin-studio/{list,toggle,search,install,uninstall}`（loopback-only）
 - 客户端插件：注册 `settings.plugins.tab` 插槽（`manager` / `market` 两个 Tab）
 - 纯函数模块（`patch.ts` / `group.ts` / `meta.ts` / `market.ts` / `descriptions.ts`）均有 vitest 单测
 

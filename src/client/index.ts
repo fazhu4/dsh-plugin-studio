@@ -1,5 +1,5 @@
 /**
- * dsh-usage-insights client plugin: registers the manager and market tabs
+ * dsh-plugin-studio client plugin: registers the manager and market tabs
  * into the Plugins settings section.
  */
 
@@ -33,51 +33,51 @@ async function jsonOrThrow<T>(response: Response): Promise<T> {
 /** Contribute the two tabs to the Plugins settings section. */
 export function apply(ctx: ClientContext): void {
   adoptStyles()
-  console.info('[dsh-usage-insights] bundle loaded')
-  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-usage-insights: dictionaries')
+  console.info('[dsh-plugin-studio] bundle loaded')
+  ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-plugin-studio: dictionaries')
 
   const lang = (): 'zh' | 'en' => ctx.locale.getSnapshot().active.startsWith('zh') ? 'zh' : 'en'
 
   const list = async (): Promise<ListResponse> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/list'))
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/list'))
   const toggle = async (body: { entryId: string; enabled: boolean }): Promise<ToggleResponse | OpError> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/toggle', {
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/toggle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     }))
   const uninstall = async (packageName: string): Promise<UninstallResponse | OpError> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/uninstall', {
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/uninstall', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ packageName }),
     }))
   const group = async (moduleName: string, groupName: string | null): Promise<GroupResponse | OpError> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/group', {
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/group', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ moduleName, groupName }),
     }))
   const groupDelete = async (groupName: string): Promise<GroupResponse | OpError> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/group-delete', {
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/group-delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ groupName }),
     }))
   const groupCreate = async (groupName: string): Promise<GroupResponse | OpError> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/group-create', {
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/group-create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ groupName }),
     }))
   const groupList = async (): Promise<string[]> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/group-list'))
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/group-list'))
   const search = async (query: string): Promise<MarketItem[]> =>
-    jsonOrThrow(await globalThis.fetch(`/dsh-usage-insights/search?q=${encodeURIComponent(query)}`))
+    jsonOrThrow(await globalThis.fetch(`/dsh-plugin-studio/search?q=${encodeURIComponent(query)}`))
   const board = async (mode: 'top' | 'rising'): Promise<MarketItem[]> =>
-    jsonOrThrow(await globalThis.fetch(`/dsh-usage-insights/search?mode=${mode}`))
+    jsonOrThrow(await globalThis.fetch(`/dsh-plugin-studio/search?mode=${mode}`))
   const install = async (spec: string): Promise<InstallResponse | OpError> =>
-    jsonOrThrow(await globalThis.fetch('/dsh-usage-insights/install', {
+    jsonOrThrow(await globalThis.fetch('/dsh-plugin-studio/install', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ spec }),

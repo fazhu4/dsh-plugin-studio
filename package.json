@@ -1,6 +1,6 @@
 {
-  "name": "dsh-usage-insights",
-  "description": "DSH usage insights: inspect installed plugin health, manage lifecycle safely, and discover community plugins from GitHub.",
+  "name": "dsh-plugin-studio",
+  "description": "DSH plugin manager: official/community grouped plugin list with localized descriptions, one-click enable/disable and uninstall, plus a GitHub dsh-plugin market tab.",
   "version": "0.3.0",
   "license": "MIT",
   "publishConfig": {
@@ -9,8 +9,7 @@
   "keywords": [
     "deepseek-harness",
     "dsh-plugin",
-    "usage-insights",
-    "plugin-insights",
+    "plugin-manager",
     "plugin-management",
     "web-ui",
     "typescript",

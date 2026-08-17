@@ -28,7 +28,7 @@ export function profilePathsFromBaseUrl(baseUrl: string): ProfilePaths {
   return {
     dir,
     patchFile: join(dir, 'cordis.patch.yml'),
-    groupsFile: join(dir, 'dsh-usage-insights-groups.json'),
+    groupsFile: join(dir, 'dsh-plugin-studio-groups.json'),
     nodeModules: join(dir, 'node_modules'),
     closureNodeModules: join(dirname(dir), 'node_modules'),
   }

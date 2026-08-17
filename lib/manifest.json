@@ -1,5 +1,5 @@
 {
-  "name": "dsh-usage-insights",
+  "name": "dsh-plugin-studio",
   "host": "lib/index.js",
   "client": "lib/client.js"
 }
