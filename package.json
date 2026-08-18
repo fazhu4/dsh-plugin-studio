@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-studio",
   "description": "DSH plugin manager: official/community grouped plugin list with localized descriptions, one-click enable/disable and uninstall, plus a GitHub dsh-plugin market tab.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

@@ -23,7 +23,7 @@ DSH（DeepSeek Harness）插件管理器：在 Web 设置页中**按官方/社�
 
 ```bash
 # 从 npm 安装已发布包
-dsh plugin --profile web add dsh-plugin-studio@0.3.0
+dsh plugin --profile web add dsh-plugin-studio@0.3.1
 
 # 从本仓库安装（推荐先构建）
 dsh plugin --profile web add file:/path/to/dsh-plugin-studio
