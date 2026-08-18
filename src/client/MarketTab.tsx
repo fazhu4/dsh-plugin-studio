@@ -83,7 +83,7 @@ export function MarketTab(props: MarketTabProps): ReactNode {
   }
 
   const renderCards = (items: readonly MarketItem[]): ReactNode => (
-    <div className="dsh_usage_cards">
+    <div className="dspm_cards">
       {items.map(item => {
         const badges: ReactNode[] = [
           <span key="src">{item.source === 'npm' ? t('npmDirect') : t('githubInstall')}</span>,
@@ -97,10 +97,10 @@ export function MarketTab(props: MarketTabProps): ReactNode {
             description={item.description === null ? t('noDescription') : item.description}
             actions={(
               <>
-                <span className="dsh_usage_badge">⭐ {item.stars}</span>
+                <span className="dspm_badge">⭐ {item.stars}</span>
                 <button
                   type="button"
-                  className="dsh_usage_btn dsh_usage_btnPrimary"
+                  className="dspm_btn dspm_btnPrimary"
                   disabled={installing === item.fullName}
                   onClick={() => { void onInstall(item) }}
                 >
@@ -117,9 +117,9 @@ export function MarketTab(props: MarketTabProps): ReactNode {
   const searching = state.status === 'done' && state.source === 'search'
 
   return (
-    <div className="dsh_usage_section">
-      <div className="dsh_usage_toolbar">
-        <label className="dsh_usage_search">
+    <div className="dspm_section">
+      <div className="dspm_toolbar">
+        <label className="dspm_search">
           <input
             type="search"
             value={query}
@@ -129,17 +129,17 @@ export function MarketTab(props: MarketTabProps): ReactNode {
             onChange={(event) => { setQuery(event.currentTarget.value) }}
           />
         </label>
-        <button type="button" className="dsh_usage_btn dsh_usage_btnPrimary" onClick={() => { void runSearch() }}>
+        <button type="button" className="dspm_btn dspm_btnPrimary" onClick={() => { void runSearch() }}>
           {t('search')}
         </button>
         {searching ? (
-          <button type="button" className="dsh_usage_btn" onClick={backToBoard}>{t('backToBoard')}</button>
+          <button type="button" className="dspm_btn" onClick={backToBoard}>{t('backToBoard')}</button>
         ) : null}
       </div>
-      <div className="dsh_usage_toolbar">
+      <div className="dspm_toolbar">
         <button
           type="button"
-          className={boardTab === 'top' ? 'dsh_usage_btn dsh_usage_btnPrimary' : 'dsh_usage_btn'}
+          className={boardTab === 'top' ? 'dspm_btn dspm_btnPrimary' : 'dspm_btn'}
           onClick={() => { setBoardTab('top') }}
         >
           {t('boardTop')}
@@ -147,23 +147,23 @@ export function MarketTab(props: MarketTabProps): ReactNode {
         <button
           type="button"
           title={t('boardRisingTitle')}
-          className={boardTab === 'rising' ? 'dsh_usage_btn dsh_usage_btnPrimary' : 'dsh_usage_btn'}
+          className={boardTab === 'rising' ? 'dspm_btn dspm_btnPrimary' : 'dspm_btn'}
           onClick={() => { setBoardTab('rising') }}
         >
           {t('boardRising')}
         </button>
       </div>
-      {notice !== null ? <div className="dsh_usage_notice" data-error={notice.error ? 'true' : undefined}>{notice.text}</div> : null}
-      {state.status === 'loading' ? <div className="dsh_usage_status">{t('marketSearching')}</div> : null}
+      {notice !== null ? <div className="dspm_notice" data-error={notice.error ? 'true' : undefined}>{notice.text}</div> : null}
+      {state.status === 'loading' ? <div className="dspm_status">{t('marketSearching')}</div> : null}
       {state.status === 'error' ? (
-        <div className="dsh_usage_status">
+        <div className="dspm_status">
           {t('marketError')}
-          <button type="button" className="dsh_usage_btn" onClick={() => { void loadBoard(boardTab) }}>{t('retry')}</button>
+          <button type="button" className="dspm_btn" onClick={() => { void loadBoard(boardTab) }}>{t('retry')}</button>
         </div>
       ) : null}
       {state.status === 'done' ? (
         state.items.length === 0
-          ? <div className="dsh_usage_empty">{t('marketEmpty')}</div>
+          ? <div className="dspm_empty">{t('marketEmpty')}</div>
           : renderCards(state.items)
       ) : null}
     </div>
