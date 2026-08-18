@@ -18,7 +18,7 @@ import { createRequire } from 'node:module'
 import { classify, resolveGroupName } from './group.ts'
 import { extractMeta, readmeSummary, type PackageMeta } from './meta.ts'
 import { patchStateOf, upsertDisabled } from './patch.ts'
-import { parseRepoManifest, parseSearchResponse, type GitHubRepo } from './market.ts'
+import { parseRepoManifest, parseSearchResponse, resolveMarketSource, type GitHubRepo } from './market.ts'
 import { mergeProtectedModules } from './protected.ts'
 import { shouldHideUninstalledEntry } from './uninstall-state.ts'
 import { isValidEntryId, isValidGroupName, isValidInstallSpec, isValidPackageName } from './validate.ts'
@@ -278,13 +278,16 @@ async function enrichRepo(repo: GitHubRepo): Promise<MarketItem> {
       // Probe failure degrades to a GitHub-source card.
     }
   }
-  const source: MarketItem['source'] = npmName !== null && await npmProbe(npmName) ? 'npm' : 'github'
+  const published = npmName !== null && await npmProbe(npmName)
+  // A repo not published to npm must install via `github:owner/repo`; drop
+  // the npm name so the frontend falls back to the repo full name.
+  const { npmName: resolvedNpmName, source } = resolveMarketSource(npmName, published)
   return {
     fullName: repo.fullName,
     description: repo.description,
     stars: repo.stars,
     htmlUrl: repo.htmlUrl,
-    npmName,
+    npmName: resolvedNpmName,
     source,
     dshBundle,
   }

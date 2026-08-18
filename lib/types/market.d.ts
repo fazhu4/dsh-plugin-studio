@@ -16,5 +16,16 @@ export interface RepoManifest {
     readonly private: boolean;
     readonly dshBundle: boolean;
 }
+export interface MarketSource {
+    readonly npmName: string | null;
+    readonly source: 'npm' | 'github';
+}
+/**
+ * Decide the install source for a market repo. The npm name survives only
+ * when the registry actually hosts the package: a repo that was never
+ * published must install via `github:owner/repo`, so its npm name is dropped
+ * and callers fall back to the repo full name (`owner/repo`).
+ */
+export declare function resolveMarketSource(npmName: string | null, published: boolean): MarketSource;
 /** Parse a repo root package.json text. */
 export declare function parseRepoManifest(raw: string): RepoManifest;
